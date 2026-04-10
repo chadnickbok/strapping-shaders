@@ -139,6 +139,24 @@ pnpm dev
 
 Use `pnpm test` for the verification suite and `pnpm build` for a production bundle check.
 
+## GitHub Pages
+
+This repo is wired to publish the playground through GitHub Pages with a GitHub Actions workflow at [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml).
+
+1. Push the repo to GitHub.
+2. In GitHub, open `Settings -> Pages`.
+3. Under `Build and deployment`, set `Source` to `GitHub Actions`.
+4. Push to `main` or run the workflow manually from the `Actions` tab.
+
+The workflow builds the site with:
+
+- `VITE_BASE_PATH=/<repo-name>/`
+- `VITE_REPOSITORY_URL=https://github.com/<owner>/<repo>`
+
+That matches standard project-site publishing at `https://<owner>.github.io/<repo>/`.
+
+If you publish from the special `<owner>.github.io` repository or a custom domain rooted at `/`, override `VITE_BASE_PATH` to `/` in the workflow.
+
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for the short contributor checklist. The rule of thumb is simple: update the spec first, keep the runtime aligned with documented behavior, and cite public technical references when they materially shape a shader.
