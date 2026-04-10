@@ -1,0 +1,35 @@
+{
+  "name": "Ghost Button",
+  "effectId": "button-emitter-aura",
+  "description": "Pale omnidirectional wisps with a larger shell and stronger lingering halo.",
+  "tags": [
+    "button",
+    "ui",
+    "spectral"
+  ],
+  "params": {
+    "buttonCenterXPx": 280,
+    "buttonCenterYPx": 160,
+    "buttonWidthPx": 220,
+    "buttonHeightPx": 72,
+    "buttonRadiusPx": 22,
+    "emitRadiusPx": 32,
+    "edgeSoftnessPx": 10,
+    "noiseScale": 0.06,
+    "noiseAmount": 0.74,
+    "driftSpeed": 0.1,
+    "directionX": 0,
+    "directionY": 0,
+    "directionalBias": 0.1,
+    "glowStrength": 0.44,
+    "tintA": "#f6fbff",
+    "tintB": "#cde7ff",
+    "burstAmount": 0,
+    "burstPhase": 0,
+    "sourceBias": 14,
+    "outflowStrength": 0.94,
+    "curlStrength": 0.5,
+    "detailMix": 0.42,
+    "hotspotPower": 1.25
+  }
+}

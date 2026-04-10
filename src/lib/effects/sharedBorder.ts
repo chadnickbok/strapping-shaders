@@ -248,6 +248,45 @@ float roundedRectPerimeterCoord(vec2 boundary, vec2 halfSize, float radius) {
   return top + arc + right + arc + bottom + arc + left + atan(v.y, -v.x) * radius;
 }
 
+vec2 roundedRectBoundaryTangent(vec2 boundary, vec2 halfSize, float radius) {
+  vec2 flatHalf = max(halfSize - vec2(radius), vec2(0.0));
+  float eps = 0.001;
+
+  if (boundary.y >= flatHalf.y && abs(boundary.x) <= flatHalf.x + eps) {
+    return vec2(1.0, 0.0);
+  }
+
+  if (boundary.x > flatHalf.x && boundary.y > flatHalf.y) {
+    vec2 v = boundary - flatHalf;
+    return normalize(vec2(v.y, -v.x));
+  }
+
+  if (boundary.x >= flatHalf.x && abs(boundary.y) <= flatHalf.y + eps) {
+    return vec2(0.0, -1.0);
+  }
+
+  if (boundary.x > flatHalf.x && boundary.y < -flatHalf.y) {
+    vec2 v = boundary - vec2(flatHalf.x, -flatHalf.y);
+    return normalize(vec2(v.y, -v.x));
+  }
+
+  if (boundary.y <= -flatHalf.y && abs(boundary.x) <= flatHalf.x + eps) {
+    return vec2(-1.0, 0.0);
+  }
+
+  if (boundary.x < -flatHalf.x && boundary.y < -flatHalf.y) {
+    vec2 v = boundary - vec2(-flatHalf.x, -flatHalf.y);
+    return normalize(vec2(v.y, -v.x));
+  }
+
+  if (boundary.x <= -flatHalf.x && abs(boundary.y) <= flatHalf.y + eps) {
+    return vec2(0.0, 1.0);
+  }
+
+  vec2 v = boundary - vec2(-flatHalf.x, flatHalf.y);
+  return normalize(vec2(v.y, -v.x));
+}
+
 float cornerWeight(vec2 boundary, vec2 halfSize, float radius) {
   vec2 flatHalf = max(halfSize - vec2(radius), vec2(0.0));
   vec2 local = abs(boundary);

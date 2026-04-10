@@ -1,0 +1,41 @@
+{
+  "name": "Stored Smoke CTA",
+  "effectId": "ghost-whoosh-button",
+  "description": "Persistent perimeter-reading idle wisps with a broader under-button pressure front on click.",
+  "tags": [
+    "button",
+    "ghost",
+    "ui"
+  ],
+  "params": {
+    "buttonCenterXPx": 280,
+    "buttonCenterYPx": 160,
+    "buttonWidthPx": 220,
+    "buttonHeightPx": 72,
+    "buttonRadiusPx": 22,
+    "noiseScale": 0.036,
+    "swirlStrength": 0.8,
+    "driftSpeed": 0.24,
+    "idleAmount": 0.94,
+    "idleReachPx": 118,
+    "centerSourceScaleX": 0.5,
+    "centerSourceScaleY": 0.32,
+    "centerFeatherPx": 16,
+    "underOffsetPx": 12,
+    "underHeightPx": 22,
+    "underPadPx": 16,
+    "whooshRadiusPx": 96,
+    "whooshFrontWidthPx": 34,
+    "detachStartPx": 12,
+    "detachEndPx": 88,
+    "riseStrength": 0.9,
+    "burstAmount": 0,
+    "burstPhase": 0,
+    "idleOpacity": 1,
+    "burstOpacity": 0.32,
+    "interiorOpacity": 0.58,
+    "glowStrength": 0.24,
+    "tintA": "#c3e1f0",
+    "tintB": "#f7fdff"
+  }
+}

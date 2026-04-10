@@ -1,0 +1,35 @@
+{
+  "name": "Fire Button",
+  "effectId": "button-emitter-aura",
+  "description": "Warm upward tongues with a taller shell, brighter lift, and stronger source highlights.",
+  "tags": [
+    "button",
+    "ui",
+    "fire"
+  ],
+  "params": {
+    "buttonCenterXPx": 280,
+    "buttonCenterYPx": 160,
+    "buttonWidthPx": 220,
+    "buttonHeightPx": 72,
+    "buttonRadiusPx": 22,
+    "emitRadiusPx": 46,
+    "edgeSoftnessPx": 8,
+    "noiseScale": 0.08,
+    "noiseAmount": 0.94,
+    "driftSpeed": 0.22,
+    "directionX": 0,
+    "directionY": -1,
+    "directionalBias": 0.85,
+    "glowStrength": 0.82,
+    "tintA": "#9c1e00",
+    "tintB": "#ffcf52",
+    "burstAmount": 0,
+    "burstPhase": 0,
+    "sourceBias": 18,
+    "outflowStrength": 0.76,
+    "curlStrength": 0.22,
+    "detailMix": 0.6,
+    "hotspotPower": 2
+  }
+}

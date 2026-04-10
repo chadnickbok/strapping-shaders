@@ -1,0 +1,41 @@
+{
+  "id": "node-button-ghost-whoosh-showcase",
+  "type": "shader",
+  "effectId": "button-ghost-whoosh",
+  "frame": {
+    "width": 560,
+    "height": 320
+  },
+  "params": {
+    "buttonCenterXPx": 280,
+    "buttonCenterYPx": 160,
+    "buttonWidthPx": 220,
+    "buttonHeightPx": 72,
+    "buttonRadiusPx": 22,
+    "noiseScale": 0.034,
+    "swirlStrength": 0.74,
+    "driftSpeed": 0.22,
+    "idleAmount": 0.56,
+    "idleReachPx": 90,
+    "centerSourceScaleX": 0.34,
+    "centerSourceScaleY": 0.22,
+    "centerFeatherPx": 10,
+    "underOffsetPx": 12,
+    "underHeightPx": 18,
+    "underPadPx": 14,
+    "whooshRadiusPx": 84,
+    "whooshFrontWidthPx": 28,
+    "detachStartPx": 10,
+    "detachEndPx": 70,
+    "riseStrength": 0.95,
+    "burstAmount": 0,
+    "burstPhase": 0,
+    "idleOpacity": 1,
+    "burstOpacity": 0.32,
+    "interiorOpacity": 0.55,
+    "glowStrength": 0.18,
+    "tintA": "#bfdff1",
+    "tintB": "#f7fdff"
+  },
+  "seed": 11
+}

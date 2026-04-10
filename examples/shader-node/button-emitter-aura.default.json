@@ -1,0 +1,35 @@
+{
+  "id": "node-button-emitter-aura-showcase",
+  "type": "shader",
+  "effectId": "button-emitter-aura",
+  "frame": {
+    "width": 560,
+    "height": 320
+  },
+  "params": {
+    "buttonCenterXPx": 280,
+    "buttonCenterYPx": 160,
+    "buttonWidthPx": 220,
+    "buttonHeightPx": 72,
+    "buttonRadiusPx": 22,
+    "emitRadiusPx": 38,
+    "edgeSoftnessPx": 10,
+    "noiseScale": 0.062,
+    "noiseAmount": 0.78,
+    "driftSpeed": 0.1,
+    "directionX": 0,
+    "directionY": 0,
+    "directionalBias": 0.12,
+    "glowStrength": 0.5,
+    "tintA": "#f6fbff",
+    "tintB": "#cde7ff",
+    "burstAmount": 0,
+    "burstPhase": 0,
+    "sourceBias": 16,
+    "outflowStrength": 0.92,
+    "curlStrength": 0.46,
+    "detailMix": 0.46,
+    "hotspotPower": 1.25
+  },
+  "seed": 11
+}

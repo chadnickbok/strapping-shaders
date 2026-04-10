@@ -1,0 +1,20 @@
+{
+  "name": "Bright Lattice",
+  "effectId": "voronoi-caustics",
+  "description": "Sharper cellular ridges with brighter highlights and restrained distortion.",
+  "tags": [
+    "background",
+    "water",
+    "stylized"
+  ],
+  "params": {
+    "waterTint": "#93d9ea",
+    "lightTint": "#fffdf5",
+    "scale": 0.56,
+    "lineWidth": 0.32,
+    "contrast": 0.82,
+    "distortion": 0.24,
+    "driftSpeed": 0.2,
+    "halo": 0.18
+  }
+}

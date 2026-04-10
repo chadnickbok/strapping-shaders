@@ -1,0 +1,41 @@
+{
+  "name": "Pressure Sweep",
+  "effectId": "button-ghost-whoosh",
+  "description": "Review-tuned button-local ghost whoosh with a broader underside push and more visible body.",
+  "tags": [
+    "button",
+    "ghost",
+    "ui"
+  ],
+  "params": {
+    "buttonCenterXPx": 280,
+    "buttonCenterYPx": 160,
+    "buttonWidthPx": 220,
+    "buttonHeightPx": 72,
+    "buttonRadiusPx": 22,
+    "noiseScale": 0.03,
+    "swirlStrength": 0.82,
+    "driftSpeed": 0.24,
+    "idleAmount": 0.68,
+    "idleReachPx": 104,
+    "centerSourceScaleX": 0.42,
+    "centerSourceScaleY": 0.28,
+    "centerFeatherPx": 14,
+    "underOffsetPx": 12,
+    "underHeightPx": 24,
+    "underPadPx": 20,
+    "whooshRadiusPx": 104,
+    "whooshFrontWidthPx": 38,
+    "detachStartPx": 12,
+    "detachEndPx": 88,
+    "riseStrength": 0.88,
+    "burstAmount": 0,
+    "burstPhase": 0,
+    "idleOpacity": 1,
+    "burstOpacity": 0.48,
+    "interiorOpacity": 0.48,
+    "glowStrength": 0.24,
+    "tintA": "#c7e5f3",
+    "tintB": "#f8fdff"
+  }
+}

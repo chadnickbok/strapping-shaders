@@ -1,0 +1,20 @@
+{
+  "name": "Quiet Web",
+  "effectId": "voronoi-caustics",
+  "description": "Broader lines, calmer drift, and more breathing room between the bright ridges.",
+  "tags": [
+    "background",
+    "ambient",
+    "stylized"
+  ],
+  "params": {
+    "waterTint": "#68b8d1",
+    "lightTint": "#edf8ff",
+    "scale": 0.34,
+    "lineWidth": 0.62,
+    "contrast": 0.48,
+    "distortion": 0.22,
+    "driftSpeed": 0.12,
+    "halo": 0.12
+  }
+}
