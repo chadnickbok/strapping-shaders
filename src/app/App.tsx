@@ -1,6 +1,13 @@
-import { startTransition, useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
+import {
+  startTransition,
+  useEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+  type KeyboardEvent as ReactKeyboardEvent
+} from "react";
 import { ShaderRenderer } from "../lib";
-import { effectOrder, getEffectDefinition } from "../lib/registry";
+import { getEffectDefinition } from "../lib/registry";
 import { defaultNodes, presetsByEffect, resolveAssetSource } from "../lib/playground/examples";
 import {
   applyPresetToState,
@@ -14,6 +21,7 @@ import type {
   ParameterControl,
   Quality
 } from "../lib/types";
+import { hexToRgb } from "../lib/runtime/utils";
 
 const QUALITY_OPTIONS: Quality[] = ["auto", "high", "medium", "low"];
 const repositoryBaseUrl = ((import.meta.env.VITE_REPOSITORY_URL as string | undefined) ?? "")
@@ -21,6 +29,20 @@ const repositoryBaseUrl = ((import.meta.env.VITE_REPOSITORY_URL as string | unde
   .replace(/\/$/, "");
 
 type ViewMode = "preview" | "payload";
+type PlaygroundEffectId = Exclude<EffectId, "button-ghost-whoosh" | "ghost-whoosh-button" | "pulse-trace-border">;
+type BurstEffectId = "ghost-frame" | "button-emitter-aura";
+type ButtonPreviewEffectId = "button-emitter-aura";
+
+const PLAYGROUND_EFFECT_IDS = [
+  "aurora-field",
+  "caustic-pool",
+  "voronoi-caustics",
+  "liquid-distortion",
+  "ghost-frame",
+  "button-emitter-aura"
+] as const satisfies readonly PlaygroundEffectId[];
+
+const BURST_EFFECT_IDS = ["ghost-frame", "button-emitter-aura"] as const;
 
 type EffectPresentation = {
   listDescription: string;
@@ -46,7 +68,64 @@ type PreviewChrome = {
   interactionLabel?: string;
 };
 
-const effectPresentation: Record<EffectId, EffectPresentation> = {
+const BUTTON_EMITTER_GEOMETRY_KEYS = [
+  "buttonCenterXPx",
+  "buttonCenterYPx",
+  "buttonWidthPx",
+  "buttonHeightPx",
+  "buttonRadiusPx"
+] as const;
+
+function isBurstEffect(effectId: PlaygroundEffectId): effectId is BurstEffectId {
+  return effectId === "ghost-frame" || effectId === "button-emitter-aura";
+}
+
+function isButtonPreviewEffect(effectId: PlaygroundEffectId): effectId is ButtonPreviewEffectId {
+  return effectId === "button-emitter-aura";
+}
+
+function roundToPrecision(value: number, digits = 2) {
+  return Number(value.toFixed(digits));
+}
+
+function rgbaFromHex(value: string, alpha: number) {
+  const [r, g, b] = hexToRgb(value);
+
+  return `rgba(${Math.round(r * 255)}, ${Math.round(g * 255)}, ${Math.round(b * 255)}, ${alpha.toFixed(3)})`;
+}
+
+function resetBurstParamsForEffect(effectId: BurstEffectId, state: PlaygroundEffectState) {
+  if (effectId === "ghost-frame") {
+    if (state.params.burstAmount === 0) {
+      return state;
+    }
+
+    return {
+      ...state,
+      params: {
+        ...state.params,
+        burstAmount: 0
+      }
+    };
+  }
+
+  const burstPhase = typeof state.params.burstPhase === "number" ? state.params.burstPhase : 0;
+
+  if (state.params.burstAmount === 0 && burstPhase === 0) {
+    return state;
+  }
+
+  return {
+    ...state,
+    params: {
+      ...state.params,
+      burstAmount: 0,
+      burstPhase: 0
+    }
+  };
+}
+
+const effectPresentation: Record<PlaygroundEffectId, EffectPresentation> = {
   "aurora-field": {
     listDescription: "Layered color ribbons for atmospheric backgrounds and motion surfaces.",
     toolbarDescription: "Procedural atmospheric ribbons with palette mapping and soft motion.",
@@ -56,6 +135,26 @@ const effectPresentation: Record<EffectId, EffectPresentation> = {
       "A procedural color field suited to large-format backgrounds where motion should stay soft and the foreground still needs contrast.",
     support: ["WebGL2", "Opaque output", "No texture input"],
     sourcePath: "docs/aurora.md"
+  },
+  "caustic-pool": {
+    listDescription: "Image-first pool-floor treatment with smooth water warp and clean bright caustic light.",
+    toolbarDescription: "A swimming-pool floor shader that submerges an optional image beneath a calm water warp and a restrained caustic lattice.",
+    previewHint: "Tune distortion, caustic, and size to balance the submerged photo against the light lattice",
+    previewUseCase: "Hero backgrounds / image-backed pool treatments / water-themed panels",
+    notes:
+      "Caustic Pool now treats the source image as the pool floor first, then adds broad water refraction and a clean Voronoi-derived caustic overlay without procedural background noise competing with the photo.",
+    support: ["WebGL2", "Opaque output", "Optional source image"],
+    sourcePath: "docs/caustic-pool.md"
+  },
+  "voronoi-caustics": {
+    listDescription: "Stylized cellular light webs with drifting Voronoi ridges and calmer water-tinted gaps.",
+    toolbarDescription: "A stylized Voronoi caustic web built from warped cellular ridges, contrast shaping, and soft halo lift.",
+    previewHint: "Tune scale, line width, and contrast to shape the cellular web",
+    previewUseCase: "Decorative backgrounds / aquatic UI / stylized light surfaces",
+    notes:
+      "Voronoi Caustics keeps the original cellular ridge language but exposes it honestly as a stylized web, with separate controls for cell scale, line width, contrast, and drift.",
+    support: ["WebGL2", "Opaque output", "No texture input"],
+    sourcePath: "docs/voronoi-caustics.md"
   },
   "liquid-distortion": {
     listDescription: "Image-backed liquid refraction with restrained blur, motion, and glint.",
@@ -77,20 +176,26 @@ const effectPresentation: Record<EffectId, EffectPresentation> = {
     support: ["WebGL2", "Transparent output", "Best on dark or photographic backdrops"],
     sourcePath: "docs/ghost-frame.md"
   },
-  "pulse-trace-border": {
-    listDescription: "Bright perimeter packets with neon trails and corner blooms.",
-    toolbarDescription: "A crisp UI border where luminous packets race the frame and flare at the corners.",
-    previewHint: "Packets circulate continuously around the frame",
-    previewUseCase: "Buttons / CTAs / premium HUD accents",
+  "button-emitter-aura": {
+    listDescription: "A button-local aura shell with ghost and fire looks built from one shared core.",
+    toolbarDescription: "A rounded button emitter with authored ghost and fire presets plus host-driven burst control.",
+    previewHint: "Click the button to trigger an aura burst",
+    previewUseCase: "Buttons / spectral CTAs / elemental actions",
     notes:
-      "Pulse Trace Border is the brighter sibling: a legible rounded frame built from perimeter coordinates, moving packets, and controlled outer bloom.",
-    support: ["WebGL2", "Transparent output", "Best on darker surfaces"],
-    sourcePath: "docs/pulse-trace-border.md"
+      "Button Emitter Aura keeps the shader anchored to the measured button rectangle instead of the full host canvas, so the wisps read as emitted from the button itself.",
+    support: ["WebGL2", "Transparent output", "Host passes button geometry"],
+    sourcePath: "docs/button-emitter-aura.md"
   }
 };
 
-const previewChromeByEffect: Record<EffectId, PreviewChrome> = {
+const previewChromeByEffect: Record<PlaygroundEffectId, PreviewChrome> = {
   "aurora-field": {
+    showcasePadding: 0
+  },
+  "caustic-pool": {
+    showcasePadding: 0
+  },
+  "voronoi-caustics": {
     showcasePadding: 0
   },
   "liquid-distortion": {
@@ -109,27 +214,23 @@ const previewChromeByEffect: Record<EffectId, PreviewChrome> = {
     },
     interactionLabel: "Trigger Ghost Frame burst"
   },
-  "pulse-trace-border": {
-    showcasePadding: 32,
-    frameShellClassName: "preview-stage__frame-shell--pulse",
-    innerClassName: "preview-stage__inner--frame-overlay",
-    showcaseShellClassName: "preview-showcase-shell preview-showcase-shell--pulse-trace",
-    overlay: {
-      className: "showcase-card showcase-card--pulse-trace",
-      eyebrow: "Launch action",
-      title: "Pulse Trace",
-      body: "Packets chase the perimeter and bloom at the corners without muddying the center."
-    }
+  "button-emitter-aura": {
+    showcasePadding: 36,
+    frameShellClassName: "preview-stage__frame-shell--button-emitter",
+    innerClassName: "preview-stage__inner--button-emitter",
+    showcaseShellClassName: "preview-showcase-shell preview-showcase-shell--button-emitter"
   }
 };
 
 function createInitialStates() {
   return {
     "aurora-field": createPlaygroundState(defaultNodes["aurora-field"]),
+    "caustic-pool": createPlaygroundState(defaultNodes["caustic-pool"]),
+    "voronoi-caustics": createPlaygroundState(defaultNodes["voronoi-caustics"]),
     "liquid-distortion": createPlaygroundState(defaultNodes["liquid-distortion"]),
     "ghost-frame": createPlaygroundState(defaultNodes["ghost-frame"]),
-    "pulse-trace-border": createPlaygroundState(defaultNodes["pulse-trace-border"])
-  } satisfies Record<EffectId, PlaygroundEffectState>;
+    "button-emitter-aura": createPlaygroundState(defaultNodes["button-emitter-aura"])
+  } satisfies Record<PlaygroundEffectId, PlaygroundEffectState>;
 }
 
 function computePreviewScale(
@@ -172,19 +273,21 @@ function GitHubMarkIcon() {
 }
 
 export function App() {
-  const [selectedEffectId, setSelectedEffectId] = useState<EffectId>("aurora-field");
-  const [states, setStates] = useState<Record<EffectId, PlaygroundEffectState>>(createInitialStates);
+  const [selectedEffectId, setSelectedEffectId] = useState<PlaygroundEffectId>("aurora-field");
+  const [states, setStates] = useState<Record<PlaygroundEffectId, PlaygroundEffectState>>(createInitialStates);
   const [viewMode, setViewMode] = useState<ViewMode>("preview");
   const [query, setQuery] = useState("");
   const [previewBounds, setPreviewBounds] = useState({ width: 0, height: 0 });
   const previewViewportRef = useRef<HTMLDivElement>(null);
-  const ghostBurstFrameRef = useRef<number | null>(null);
+  const burstFrameRefs = useRef<Partial<Record<BurstEffectId, number>>>({});
+  const buttonEmitterHostRef = useRef<HTMLDivElement>(null);
+  const buttonEmitterButtonRef = useRef<HTMLButtonElement>(null);
   const definition = getEffectDefinition(selectedEffectId) as AnyEffectDefinition;
   const currentState = states[selectedEffectId];
   const presentation = effectPresentation[selectedEffectId];
   const previewChrome = previewChromeByEffect[selectedEffectId];
   const normalizedQuery = query.trim().toLowerCase();
-  const visibleEffects = effectOrder.filter((effectId) => {
+  const visibleEffects = PLAYGROUND_EFFECT_IDS.filter((effectId) => {
     const effect = getEffectDefinition(effectId);
     const haystack = [
       effect.displayName,
@@ -223,16 +326,42 @@ export function App() {
 
   useEffect(() => {
     return () => {
-      if (ghostBurstFrameRef.current !== null) {
-        cancelAnimationFrame(ghostBurstFrameRef.current);
+      for (const frame of Object.values(burstFrameRefs.current)) {
+        if (typeof frame === "number") {
+          cancelAnimationFrame(frame);
+        }
       }
     };
   }, []);
 
   useEffect(() => {
-    if (selectedEffectId !== "ghost-frame") {
-      stopGhostFrameBurst();
+    for (const effectId of BURST_EFFECT_IDS) {
+      if (selectedEffectId !== effectId) {
+        stopBurstAnimation(effectId);
+      }
     }
+
+    setStates((previous) => {
+      let nextState = previous;
+
+      for (const effectId of BURST_EFFECT_IDS) {
+        if (selectedEffectId === effectId) {
+          continue;
+        }
+
+        const resetState = resetBurstParamsForEffect(effectId, previous[effectId]);
+
+        if (resetState !== previous[effectId]) {
+          if (nextState === previous) {
+            nextState = { ...previous };
+          }
+
+          nextState[effectId] = resetState;
+        }
+      }
+
+      return nextState;
+    });
   }, [selectedEffectId]);
 
   const previewScale = computePreviewScale(
@@ -256,15 +385,135 @@ export function App() {
     definition.alphaMode === "transparent" ? "transparent" : "opaque",
     definition.assetSlots.length > 0 ? `${definition.assetSlots.length} texture` : "procedural"
   ].join(" • ");
+  const buttonEmitterTintA = typeof currentState.params.tintA === "string" ? currentState.params.tintA : "#f6fbff";
+  const buttonEmitterTintB = typeof currentState.params.tintB === "string" ? currentState.params.tintB : "#cde7ff";
+  const buttonEmitterWidth = typeof currentState.params.buttonWidthPx === "number" ? currentState.params.buttonWidthPx : 220;
+  const buttonEmitterHeight = typeof currentState.params.buttonHeightPx === "number" ? currentState.params.buttonHeightPx : 72;
+  const buttonEmitterRadius =
+    typeof currentState.params.buttonRadiusPx === "number" ? currentState.params.buttonRadiusPx : 22;
+  const buttonEmitterGlowStrength =
+    typeof currentState.params.glowStrength === "number" ? currentState.params.glowStrength : 0.35;
+  const buttonEmitterDirectionalBias =
+    typeof currentState.params.directionalBias === "number" ? currentState.params.directionalBias : 0;
+  const buttonEmitterDirectionY = typeof currentState.params.directionY === "number" ? currentState.params.directionY : 0;
+  const buttonEmitterLooksFireLike =
+    selectedEffectId === "button-emitter-aura" &&
+    buttonEmitterDirectionalBias > 0.55 &&
+    buttonEmitterDirectionY < -0.35;
+  const buttonPreviewVariantClassName = buttonEmitterLooksFireLike
+    ? "button-emitter-demo--fire"
+    : "button-emitter-demo--ghost";
+  const buttonPreviewButtonClassName = buttonEmitterLooksFireLike
+    ? "button-emitter-demo__button--fire"
+    : "button-emitter-demo__button--ghost";
+  const buttonPreviewLabel = buttonEmitterLooksFireLike ? "Fire Button" : "Ghost Button";
+  const buttonEmitterThemeStyle = {
+    "--button-emitter-accent-soft": rgbaFromHex(
+      buttonEmitterTintA,
+      buttonEmitterLooksFireLike ? 0.06 + buttonEmitterGlowStrength * 0.08 : 0.05 + buttonEmitterGlowStrength * 0.08
+    ),
+    "--button-emitter-accent-strong": rgbaFromHex(
+      buttonEmitterTintB,
+      buttonEmitterLooksFireLike ? 0.22 + buttonEmitterGlowStrength * 0.08 : 0.16 + buttonEmitterGlowStrength * 0.08
+    ),
+    "--button-emitter-border": rgbaFromHex(
+      buttonEmitterTintB,
+      buttonEmitterLooksFireLike ? 0.26 + buttonEmitterGlowStrength * 0.08 : 0.16 + buttonEmitterGlowStrength * 0.08
+    ),
+    "--button-emitter-shadow": rgbaFromHex(
+      buttonEmitterTintB,
+      buttonEmitterLooksFireLike ? 0.16 + buttonEmitterGlowStrength * 0.1 : 0.1 + buttonEmitterGlowStrength * 0.08
+    ),
+    "--button-emitter-text": buttonEmitterLooksFireLike ? "#fff6ea" : "#f7fbff"
+  } as CSSProperties;
+  const buttonEmitterButtonStyle = {
+    width: buttonEmitterWidth,
+    height: buttonEmitterHeight,
+    borderRadius: buttonEmitterRadius
+  } as CSSProperties;
+
+  useEffect(() => {
+    if (!isButtonPreviewEffect(selectedEffectId) || viewMode !== "preview") {
+      return undefined;
+    }
+
+    const host = buttonEmitterHostRef.current;
+    const button = buttonEmitterButtonRef.current;
+
+    if (!host || !button) {
+      return undefined;
+    }
+
+    const measure = () => {
+      const hostRect = host.getBoundingClientRect();
+      const buttonRect = button.getBoundingClientRect();
+
+      if (hostRect.width <= 0 || hostRect.height <= 0 || buttonRect.width <= 0 || buttonRect.height <= 0) {
+        return;
+      }
+
+      const scale = previewScale || 1;
+      const borderRadius = Number.parseFloat(window.getComputedStyle(button).borderTopLeftRadius) || 0;
+      const nextGeometry = {
+        buttonCenterXPx: roundToPrecision((buttonRect.left - hostRect.left + buttonRect.width * 0.5) / scale),
+        buttonCenterYPx: roundToPrecision((buttonRect.top - hostRect.top + buttonRect.height * 0.5) / scale),
+        buttonWidthPx: roundToPrecision(buttonRect.width / scale),
+        buttonHeightPx: roundToPrecision(buttonRect.height / scale),
+        buttonRadiusPx: roundToPrecision(borderRadius)
+      };
+
+      setStates((previous) => {
+        const currentParams = previous[selectedEffectId].params as Record<string, unknown>;
+        const hasChanged = BUTTON_EMITTER_GEOMETRY_KEYS.some((key) => {
+          const currentValue = Number(currentParams[key] ?? 0);
+          return Math.abs(currentValue - nextGeometry[key]) > 0.01;
+        });
+
+        if (!hasChanged) {
+          return previous;
+        }
+
+        return {
+          ...previous,
+          [selectedEffectId]: {
+            ...previous[selectedEffectId],
+            params: {
+              ...previous[selectedEffectId].params,
+              ...nextGeometry
+            }
+          }
+        };
+      });
+    };
+
+    measure();
+
+    if (typeof ResizeObserver === "undefined") {
+      return undefined;
+    }
+
+    const observer = new ResizeObserver(() => {
+      measure();
+    });
+
+    observer.observe(host);
+    observer.observe(button);
+
+    return () => observer.disconnect();
+  }, [currentState.height, currentState.width, previewScale, selectedEffectId, viewMode]);
 
   function updateCurrentState(updater: (state: PlaygroundEffectState) => PlaygroundEffectState) {
-    if (selectedEffectId === "ghost-frame") {
-      stopGhostFrameBurst();
+    if (isBurstEffect(selectedEffectId)) {
+      stopBurstAnimation(selectedEffectId);
     }
 
     setStates((previous) => ({
       ...previous,
-      [selectedEffectId]: updater(previous[selectedEffectId])
+      [selectedEffectId]: updater(
+        isBurstEffect(selectedEffectId)
+          ? resetBurstParamsForEffect(selectedEffectId, previous[selectedEffectId])
+          : previous[selectedEffectId]
+      )
     }));
   }
 
@@ -276,8 +525,8 @@ export function App() {
   }
 
   function resetCurrentState() {
-    if (selectedEffectId === "ghost-frame") {
-      stopGhostFrameBurst();
+    if (isBurstEffect(selectedEffectId)) {
+      stopBurstAnimation(selectedEffectId);
     }
 
     setStates((previous) => ({
@@ -290,49 +539,55 @@ export function App() {
     void previewViewportRef.current?.requestFullscreen();
   }
 
-  function setGhostFrameBurstAmount(burstAmount: number) {
+  function setBurstState(effectId: BurstEffectId, burstAmount: number, burstPhase = 0) {
     setStates((previous) => ({
       ...previous,
-      "ghost-frame": {
-        ...previous["ghost-frame"],
+      [effectId]: {
+        ...previous[effectId],
         params: {
-          ...previous["ghost-frame"].params,
-          burstAmount
+          ...previous[effectId].params,
+          burstAmount,
+          ...(effectId === "ghost-frame" ? {} : { burstPhase })
         }
       }
     }));
   }
 
-  function stopGhostFrameBurst() {
-    if (ghostBurstFrameRef.current !== null) {
-      cancelAnimationFrame(ghostBurstFrameRef.current);
-      ghostBurstFrameRef.current = null;
+  function stopBurstAnimation(effectId: BurstEffectId) {
+    const frame = burstFrameRefs.current[effectId];
+
+    if (typeof frame === "number") {
+      cancelAnimationFrame(frame);
+      delete burstFrameRefs.current[effectId];
     }
   }
 
-  function triggerGhostFrameBurst() {
-    stopGhostFrameBurst();
+  function triggerBurstAnimation(effectId: BurstEffectId) {
+    stopBurstAnimation(effectId);
+    const durationMs = effectId === "ghost-frame" ? 900 : 650;
+    const decayRate = effectId === "ghost-frame" ? 3.6 : 4.2;
+    const taper = effectId === "ghost-frame" ? 0.14 : 0.08;
     const startedAt = performance.now();
-    const durationMs = 900;
 
-    setGhostFrameBurstAmount(1);
+    setBurstState(effectId, 1, 0);
 
     const tick = (timestamp: number) => {
       const elapsedMs = timestamp - startedAt;
       const progress = Math.min(elapsedMs / durationMs, 1);
       const elapsedSec = elapsedMs / 1000;
-      const burstAmount = progress >= 1 ? 0 : Math.exp(-elapsedSec * 3.6) * (1 - progress * 0.14);
+      const burstAmount = progress >= 1 ? 0 : Math.exp(-elapsedSec * decayRate) * (1 - progress * taper);
 
-      setGhostFrameBurstAmount(Math.max(0, burstAmount));
+      setBurstState(effectId, Math.max(0, burstAmount), progress);
 
       if (progress < 1) {
-        ghostBurstFrameRef.current = requestAnimationFrame(tick);
+        burstFrameRefs.current[effectId] = requestAnimationFrame(tick);
       } else {
-        ghostBurstFrameRef.current = null;
+        setBurstState(effectId, 0, 0);
+        delete burstFrameRefs.current[effectId];
       }
     };
 
-    ghostBurstFrameRef.current = requestAnimationFrame(tick);
+    burstFrameRefs.current[effectId] = requestAnimationFrame(tick);
   }
 
   function handleInteractivePreviewKeyDown(event: ReactKeyboardEvent<HTMLDivElement>) {
@@ -342,7 +597,7 @@ export function App() {
 
     if (event.key === "Enter" || event.key === " ") {
       event.preventDefault();
-      triggerGhostFrameBurst();
+      triggerBurstAnimation("ghost-frame");
     }
   }
 
@@ -454,6 +709,21 @@ export function App() {
     );
   }
 
+  const shaderPreview = (
+    <ShaderRenderer
+      animate={currentState.animate}
+      assets={previewAssets}
+      className={isButtonPreviewEffect(selectedEffectId) ? "preview-renderer preview-renderer--button-emitter" : "preview-renderer"}
+      effectId={selectedEffectId}
+      height={currentState.height}
+      params={currentState.params}
+      quality={currentState.quality}
+      seed={currentState.seedInput.trim() ? currentState.seedInput : undefined}
+      time={currentState.manualTime ? currentState.time : undefined}
+      width={currentState.width}
+    />
+  );
+
   const previewFrame = (
     <div
       className={[
@@ -469,25 +739,43 @@ export function App() {
         transform: `scale(${previewScale})`
       }}
     >
-      {previewChrome.overlay ? (
-        <div className={previewChrome.overlay.className}>
-          <p className="showcase-card__eyebrow">{previewChrome.overlay.eyebrow}</p>
-          <h3>{previewChrome.overlay.title}</h3>
-          <p>{previewChrome.overlay.body}</p>
+      {selectedEffectId === "button-emitter-aura" ? (
+        <div
+          className={[
+            "button-emitter-demo",
+            buttonPreviewVariantClassName
+          ]
+            .filter(Boolean)
+            .join(" ")}
+          ref={buttonEmitterHostRef}
+          style={buttonEmitterThemeStyle}
+        >
+          {shaderPreview}
+          <button
+            className={[
+              "button-emitter-demo__button",
+              buttonPreviewButtonClassName
+            ].join(" ")}
+            onClick={() => triggerBurstAnimation("button-emitter-aura")}
+            ref={buttonEmitterButtonRef}
+            style={buttonEmitterButtonStyle}
+            type="button"
+          >
+            {buttonPreviewLabel}
+          </button>
         </div>
-      ) : null}
-      <ShaderRenderer
-        animate={currentState.animate}
-        assets={previewAssets}
-        className="preview-renderer"
-        effectId={selectedEffectId}
-        height={currentState.height}
-        params={currentState.params}
-        quality={currentState.quality}
-        seed={currentState.seedInput.trim() ? currentState.seedInput : undefined}
-        time={currentState.manualTime ? currentState.time : undefined}
-        width={currentState.width}
-      />
+      ) : (
+        <>
+          {previewChrome.overlay ? (
+            <div className={previewChrome.overlay.className}>
+              <p className="showcase-card__eyebrow">{previewChrome.overlay.eyebrow}</p>
+              <h3>{previewChrome.overlay.title}</h3>
+              <p>{previewChrome.overlay.body}</p>
+            </div>
+          ) : null}
+          {shaderPreview}
+        </>
+      )}
     </div>
   );
 
@@ -501,7 +789,7 @@ export function App() {
       ]
         .filter(Boolean)
         .join(" ")}
-      onClick={selectedEffectId === "ghost-frame" ? triggerGhostFrameBurst : undefined}
+      onClick={selectedEffectId === "ghost-frame" ? () => triggerBurstAnimation("ghost-frame") : undefined}
       onKeyDown={selectedEffectId === "ghost-frame" ? handleInteractivePreviewKeyDown : undefined}
       role={selectedEffectId === "ghost-frame" ? "button" : undefined}
       style={{

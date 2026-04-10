@@ -1,0 +1,32 @@
+{
+  "id": "node-caustic-pool-hero",
+  "type": "shader",
+  "effectId": "caustic-pool",
+  "frame": {
+    "width": 1440,
+    "height": 900,
+    "rotation": 0
+  },
+  "params": {
+    "waterTint": "#97d7e6",
+    "lightTint": "#fffdf7",
+    "layerMix": 0.72,
+    "distortion": 0.58,
+    "waves": 0.58,
+    "caustic": 0.76,
+    "size": 0.42,
+    "openness": 0.18,
+    "speed": 0.32,
+    "depth": 0.52,
+    "halo": 0.18
+  },
+  "seed": "pool-default",
+  "assets": {
+    "sourceImage": "fixtures/images/sample-photo.png"
+  },
+  "exportOverrides": {
+    "quality": "auto",
+    "animate": true,
+    "time": 0
+  }
+}

@@ -32,16 +32,37 @@ export function EffectCanvas<TParams extends Record<string, unknown>>({
   style
 }: EffectCanvasProps<TParams>) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const requestRenderRef = useRef<(() => void) | null>(null);
   const [runtimeError, setRuntimeError] = useState<string | null>(null);
   const sanitizedParams = definition.sanitizeParams(params);
   const missingAssets = definition.assetSlots.filter((slot) => slot.required && !assets[slot.name]);
   const resolvedSeed = normalizeSeed(seed);
+  const frameStateRef = useRef({
+    animate,
+    height,
+    params: sanitizedParams,
+    quality,
+    resolvedSeed,
+    time,
+    width
+  });
   const requestedAssets = Object.fromEntries(
     definition.assetSlots
       .map((slot) => [slot.name, assets[slot.name]])
       .filter((entry): entry is [string, string] => Boolean(entry[1]))
   );
   const { images, errors, loading } = useAssetImages(requestedAssets);
+  const paramsKey = paramsSignature(sanitizedParams);
+
+  frameStateRef.current = {
+    animate,
+    height,
+    params: sanitizedParams,
+    quality,
+    resolvedSeed,
+    time,
+    width
+  };
 
   useEffect(() => {
     if (missingAssets.length > 0) {
@@ -79,9 +100,9 @@ export function EffectCanvas<TParams extends Record<string, unknown>>({
 
     let program: WebGLProgram | null = null;
     let vao: WebGLVertexArrayObject | null = null;
-    let animationFrame = 0;
+    let animationFrame: number | null = null;
     let disposed = false;
-    let elapsedTime = typeof time === "number" ? time : 0;
+    let elapsedTime = typeof frameStateRef.current.time === "number" ? frameStateRef.current.time : 0;
     let previousTimestamp = 0;
 
     try {
@@ -99,23 +120,35 @@ export function EffectCanvas<TParams extends Record<string, unknown>>({
       setRuntimeError(null);
 
       const renderFrame = (timestamp: number) => {
+        animationFrame = null;
+
         if (disposed) {
           return;
         }
 
-        if (typeof time === "number") {
-          elapsedTime = time;
-        } else if (animate) {
+        const frameState = frameStateRef.current;
+
+        if (typeof frameState.time === "number") {
+          elapsedTime = frameState.time;
+          previousTimestamp = timestamp;
+        } else if (frameState.animate) {
           if (previousTimestamp === 0) {
             previousTimestamp = timestamp;
           }
 
           elapsedTime += (timestamp - previousTimestamp) / 1000;
           previousTimestamp = timestamp;
+        } else {
+          previousTimestamp = timestamp;
         }
 
-        const renderScale = qualityToScale(quality, width, height);
-        const { pixelWidth, pixelHeight } = resizeCanvasToDisplaySize(canvas, width, height, renderScale);
+        const renderScale = qualityToScale(frameState.quality, frameState.width, frameState.height);
+        const { pixelWidth, pixelHeight } = resizeCanvasToDisplaySize(
+          canvas,
+          frameState.width,
+          frameState.height,
+          renderScale
+        );
 
         gl.viewport(0, 0, pixelWidth, pixelHeight);
         // alphaMode controls the cleared backdrop; individual effects may still write fragment alpha.
@@ -127,36 +160,46 @@ export function EffectCanvas<TParams extends Record<string, unknown>>({
 
         setUniformVec2(gl, locations.uResolution, pixelWidth, pixelHeight);
         setUniformFloat(gl, locations.uTime, elapsedTime);
-        setUniformFloat(gl, locations.uSeed, resolvedSeed);
+        setUniformFloat(gl, locations.uSeed, frameState.resolvedSeed);
         setUniformFloat(gl, locations.uQualityScale, renderScale);
 
         definition.applyUniforms({
           gl,
           locations,
-          params: sanitizedParams,
+          params: frameState.params,
           resolution: [pixelWidth, pixelHeight],
+          displaySize: [frameState.width, frameState.height],
           time: elapsedTime,
-          seed: resolvedSeed,
+          seed: frameState.resolvedSeed,
           qualityScale: renderScale,
           textures
         });
 
         gl.drawArrays(gl.TRIANGLES, 0, 3);
 
-        if (typeof time !== "number" && animate) {
+        if (typeof frameState.time !== "number" && frameState.animate) {
           animationFrame = requestAnimationFrame(renderFrame);
         }
       };
 
-      renderFrame(performance.now());
+      requestRenderRef.current = () => {
+        if (disposed || animationFrame !== null) {
+          return;
+        }
 
-      if (typeof time !== "number" && animate) {
         animationFrame = requestAnimationFrame(renderFrame);
-      }
+      };
+
+      renderFrame(performance.now());
 
       return () => {
         disposed = true;
-        cancelAnimationFrame(animationFrame);
+        requestRenderRef.current = null;
+
+        if (animationFrame !== null) {
+          cancelAnimationFrame(animationFrame);
+        }
+
         destroyTextureResources(gl, textures);
         if (program) {
           gl.deleteProgram(program);
@@ -166,6 +209,7 @@ export function EffectCanvas<TParams extends Record<string, unknown>>({
         }
       };
     } catch (error) {
+      requestRenderRef.current = null;
       setRuntimeError(error instanceof Error ? error.message : "Unable to render shader.");
       if (program) {
         gl.deleteProgram(program);
@@ -176,19 +220,16 @@ export function EffectCanvas<TParams extends Record<string, unknown>>({
       return undefined;
     }
   }, [
-    animate,
     assetSignature(requestedAssets),
     definition,
     errors,
-    height,
     loading,
-    quality,
-    resolvedSeed,
-    time,
-    width,
-    missingAssets.length,
-    paramsSignature(sanitizedParams)
+    missingAssets.length
   ]);
+
+  useEffect(() => {
+    requestRenderRef.current?.();
+  }, [animate, height, paramsKey, quality, resolvedSeed, time, width]);
 
   const statusMessage =
     missingAssets.length > 0

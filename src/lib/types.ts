@@ -1,6 +1,15 @@
 import type { CSSProperties } from "react";
 
-export type EffectId = "aurora-field" | "liquid-distortion" | "ghost-frame" | "pulse-trace-border";
+export type EffectId =
+  | "aurora-field"
+  | "caustic-pool"
+  | "voronoi-caustics"
+  | "liquid-distortion"
+  | "ghost-frame"
+  | "button-emitter-aura"
+  | "button-ghost-whoosh"
+  | "ghost-whoosh-button"
+  | "pulse-trace-border";
 
 export type Quality = "auto" | "high" | "medium" | "low";
 
@@ -72,6 +81,7 @@ export type UniformContext<TParams extends Record<string, unknown>> = {
   locations: Record<string, WebGLUniformLocation | null>;
   params: TParams;
   resolution: [number, number];
+  displaySize: [number, number];
   time: number;
   seed: number;
   qualityScale: number;

@@ -91,15 +91,17 @@ export const auroraFieldDefinition: EffectDefinition<AuroraFieldParams> = {
     };
   },
   applyUniforms({ gl, locations, params }) {
+    const palette = Array.isArray(params.palette) && params.palette.length > 0 ? params.palette : DEFAULT_PARAMS.palette;
+
     setUniformFloat(gl, locations.uDensity, params.density);
     setUniformFloat(gl, locations.uFlow, params.flow);
     setUniformFloat(gl, locations.uContrast, params.contrast);
     setUniformFloat(gl, locations.uOpacity, params.opacity);
-    setUniformInt(gl, locations.uPaletteCount, params.palette.length);
+    setUniformInt(gl, locations.uPaletteCount, palette.length);
     setUniformVec3Array(
       gl,
       locations["uPalette[0]"],
-      colorsToFloatArray(params.palette, MAX_PALETTE_COLORS, DEFAULT_PARAMS.palette[0])
+      colorsToFloatArray(palette, MAX_PALETTE_COLORS, DEFAULT_PARAMS.palette[0])
     );
   },
   fragmentShader: `#version 300 es

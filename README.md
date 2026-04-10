@@ -13,7 +13,7 @@ Most of the catalog is built from combinations of six high-level components:
 - `image sampling`: refraction, chromatic splitting, halftoning, channel separation, blur
 - `surface and post treatments`: bloom, grain, vignette, emboss, edge bleed, glow
 
-Those parts recombine into the 20 shader families in [`docs/`](docs/): atmospheric backgrounds, image distortions, overlays, print treatments, and material simulations.
+Those parts recombine into the 24 shader families in [`docs/`](docs/): atmospheric backgrounds, image distortions, overlays, print treatments, and material simulations.
 
 ## Shared Contract
 
@@ -81,10 +81,13 @@ Not acceptable:
 | Orbit Confetti | tiling, per-cell motion, palette indexing | procedural | [docs/orbit-confetti.md](docs/orbit-confetti.md) |
 | Truchet Neon | tiling, arc SDF, glow | procedural | [docs/truchet-neon.md](docs/truchet-neon.md) |
 | Ghost Frame | rounded-rect SDF, center vapor, edge catch | procedural | [docs/ghost-frame.md](docs/ghost-frame.md) |
+| Button Emitter Aura | button SDF, emission shell, directional wisps | procedural | [docs/button-emitter-aura.md](docs/button-emitter-aura.md) |
+| Ghost Whoosh Button | layered button host, center source, under-button capsule burst | procedural | [docs/ghost-whoosh-button.md](docs/ghost-whoosh-button.md) |
 | Pulse Trace Border | rounded-rect SDF, perimeter packets, glow trails | procedural | [docs/pulse-trace-border.md](docs/pulse-trace-border.md) |
 | Paper Fibers | procedural texture, emboss, grain | procedural | [docs/paper-fibers.md](docs/paper-fibers.md) |
 | Lava Lamp | metaballs, palette mapping, rim light | procedural | [docs/lava-lamp.md](docs/lava-lamp.md) |
-| Caustic Pool | Voronoi/ridge field, shimmer, bloom | procedural | [docs/caustic-pool.md](docs/caustic-pool.md) |
+| Caustic Pool | wave field, receiver focus, optional floor image | optional image | [docs/caustic-pool.md](docs/caustic-pool.md) |
+| Voronoi Caustics | Voronoi ridge field, domain warp, halo | procedural | [docs/voronoi-caustics.md](docs/voronoi-caustics.md) |
 | Holographic Foil | iridescence, Fresnel, scratch noise | optional image | [docs/holographic-foil.md](docs/holographic-foil.md) |
 | Liquid Distortion | refraction, blur, noise field | required image | [docs/liquid-distortion.md](docs/liquid-distortion.md) |
 | Riso Misprint | halftone, channel separation, overprint | required image | [docs/riso-misprint.md](docs/riso-misprint.md) |
@@ -122,13 +125,13 @@ Useful papers and specialist references already used throughout the catalog:
 
 ## Repository Layout
 
-- `docs/`: 21 individual shader specs
+- `docs/`: 24 individual shader specs
 - `schemas/`: JSON schemas for shader nodes and presets
 - `examples/`: example nodes and presets
-- `fixtures/`: local assets that are safe to ship with the repo
+- `fixtures/`: local assets and placeholders used by the playground; document provenance before shipping
 - `src/`: reference React and WebGL runtime plus playground
 
-The current playground ships prototypes for `aurora-field`, `ghost-frame`, `pulse-trace-border`, and `liquid-distortion`, which line up with the Aurora, Ghost Frame, Pulse Trace Border, and Liquid Distortion shader families in the docs.
+The current playground surfaces `aurora-field`, `caustic-pool`, `voronoi-caustics`, `ghost-frame`, `button-emitter-aura`, and `liquid-distortion`. Additional effect implementations, presets, and specs remain in `src/lib/`, `examples/`, and `docs/`.
 
 ## Local Development
 

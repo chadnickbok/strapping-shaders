@@ -1,0 +1,23 @@
+{
+  "name": "Sun Shelf",
+  "effectId": "caustic-pool",
+  "description": "High-key white caustics over a calmer shallow-water image treatment.",
+  "tags": [
+    "background",
+    "water",
+    "image-backed"
+  ],
+  "params": {
+    "waterTint": "#9eddea",
+    "lightTint": "#fffef8",
+    "layerMix": 0.56,
+    "distortion": 0.34,
+    "waves": 0.42,
+    "caustic": 0.84,
+    "size": 0.38,
+    "openness": 0.26,
+    "speed": 0.26,
+    "depth": 0.32,
+    "halo": 0.1
+  }
+}

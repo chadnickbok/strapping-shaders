@@ -1,0 +1,26 @@
+{
+  "id": "node-voronoi-caustics-hero",
+  "type": "shader",
+  "effectId": "voronoi-caustics",
+  "frame": {
+    "width": 1440,
+    "height": 900,
+    "rotation": 0
+  },
+  "params": {
+    "waterTint": "#7cc7df",
+    "lightTint": "#f7fbff",
+    "scale": 0.42,
+    "lineWidth": 0.44,
+    "contrast": 0.62,
+    "distortion": 0.3,
+    "driftSpeed": 0.22,
+    "halo": 0.14
+  },
+  "seed": "voronoi-default",
+  "exportOverrides": {
+    "quality": "auto",
+    "animate": true,
+    "time": 0
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "name": "Gallery Pool",
+  "effectId": "caustic-pool",
+  "description": "Calmer motion, deeper transmission, and broader caustic shapes for an editorial pool-floor look.",
+  "tags": [
+    "background",
+    "water",
+    "ambient"
+  ],
+  "params": {
+    "waterTint": "#8fcfdf",
+    "lightTint": "#fffbf2",
+    "layerMix": 0.68,
+    "distortion": 0.5,
+    "waves": 0.56,
+    "caustic": 0.58,
+    "size": 0.6,
+    "openness": 0.46,
+    "speed": 0.18,
+    "depth": 0.58,
+    "halo": 0.2
+  }
+}
