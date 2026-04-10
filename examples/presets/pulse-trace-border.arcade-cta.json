@@ -1,0 +1,25 @@
+{
+  "name": "Arcade CTA",
+  "effectId": "pulse-trace-border",
+  "description": "A brighter dual-color border with longer trails and punchier corner blooms.",
+  "tags": [
+    "button",
+    "cta",
+    "neon"
+  ],
+  "params": {
+    "thicknessPx": 15,
+    "cornerRadiusPx": 28,
+    "insetPx": 12,
+    "tint": "#74cfff",
+    "glowStrength": 0.62,
+    "glowSpread": 0.48,
+    "accentTint": "#fff7d6",
+    "packetCount": 4,
+    "packetSize": 0.38,
+    "packetSpeed": 0.82,
+    "trailLength": 0.74,
+    "cornerBloom": 0.72,
+    "wobble": 0.3
+  }
+}

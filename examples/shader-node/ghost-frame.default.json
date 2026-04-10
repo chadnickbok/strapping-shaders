@@ -1,0 +1,28 @@
+{
+  "id": "node-ghost-frame-card",
+  "type": "shader",
+  "effectId": "ghost-frame",
+  "frame": {
+    "width": 560,
+    "height": 360
+  },
+  "params": {
+    "thicknessPx": 18,
+    "cornerRadiusPx": 30,
+    "insetPx": 18,
+    "tint": "#d6f6ff",
+    "glowStrength": 0.4,
+    "glowSpread": 0.52,
+    "edgeSoftness": 0.52,
+    "smokeAmount": 0.58,
+    "smokeScale": 0.42,
+    "smokeDrift": 0.36,
+    "centerSource": 0.6,
+    "edgeCatch": 0.74,
+    "burstAmount": 0,
+    "burstExpansion": 0.62,
+    "burstGlowBoost": 0.68,
+    "burstTurbulence": 0.54
+  },
+  "seed": 7
+}

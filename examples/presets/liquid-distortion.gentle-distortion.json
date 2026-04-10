@@ -1,0 +1,19 @@
+{
+  "name": "Gentle Distortion",
+  "effectId": "liquid-distortion",
+  "description": "A restrained liquid refraction pass for photographic content.",
+  "tags": [
+    "image",
+    "liquid",
+    "subtle"
+  ],
+  "params": {
+    "distortion": 0.24,
+    "refraction": 0.32,
+    "blur": 0.06,
+    "motion": 0.26,
+    "featureSize": 0.44,
+    "edgeStability": 0.12,
+    "highlight": 0.28
+  }
+}

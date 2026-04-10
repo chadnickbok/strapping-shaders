@@ -1,0 +1,28 @@
+{
+  "name": "Seance Card",
+  "effectId": "ghost-frame",
+  "description": "A slightly denser spectral frame with stronger edge condensation and bloom.",
+  "tags": [
+    "overlay",
+    "ui",
+    "atmospheric"
+  ],
+  "params": {
+    "thicknessPx": 20,
+    "cornerRadiusPx": 32,
+    "insetPx": 16,
+    "tint": "#c9f5ff",
+    "glowStrength": 0.46,
+    "glowSpread": 0.58,
+    "edgeSoftness": 0.58,
+    "smokeAmount": 0.66,
+    "smokeScale": 0.5,
+    "smokeDrift": 0.38,
+    "centerSource": 0.62,
+    "edgeCatch": 0.8,
+    "burstAmount": 0,
+    "burstExpansion": 0.7,
+    "burstGlowBoost": 0.76,
+    "burstTurbulence": 0.62
+  }
+}

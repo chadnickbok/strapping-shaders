@@ -1,0 +1,22 @@
+{
+  "id": "node-liquid-photo",
+  "type": "shader",
+  "effectId": "liquid-distortion",
+  "frame": {
+    "width": 1200,
+    "height": 800
+  },
+  "params": {
+    "distortion": 0.3,
+    "refraction": 0.35,
+    "blur": 0.08,
+    "motion": 0.38,
+    "featureSize": 0.5,
+    "edgeStability": 0.1,
+    "highlight": 0.35
+  },
+  "seed": "photo-demo-1",
+  "assets": {
+    "sourceImage": "fixtures/images/sample-photo.png"
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "name": "Sunrise Sweep",
+  "effectId": "aurora-field",
+  "description": "Warm atmospheric background with moderate flow.",
+  "tags": [
+    "background",
+    "hero",
+    "warm"
+  ],
+  "params": {
+    "palette": [
+      "#211c56",
+      "#8a3ffc",
+      "#ff8f6b",
+      "#fff0bb"
+    ],
+    "density": 0.4,
+    "flow": 0.58,
+    "contrast": 0.52,
+    "opacity": 1
+  }
+}

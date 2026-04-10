@@ -1,0 +1,25 @@
+{
+  "id": "node-pulse-trace-cta",
+  "type": "shader",
+  "effectId": "pulse-trace-border",
+  "frame": {
+    "width": 520,
+    "height": 220
+  },
+  "params": {
+    "thicknessPx": 16,
+    "cornerRadiusPx": 30,
+    "insetPx": 14,
+    "tint": "#7ed8ff",
+    "glowStrength": 0.54,
+    "glowSpread": 0.44,
+    "accentTint": "#f8fbff",
+    "packetCount": 3,
+    "packetSize": 0.34,
+    "packetSpeed": 0.74,
+    "trailLength": 0.62,
+    "cornerBloom": 0.62,
+    "wobble": 0.22
+  },
+  "seed": 19
+}
