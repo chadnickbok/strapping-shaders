@@ -162,4 +162,18 @@ describe("playground state", () => {
     );
     expect(presetsByEffect["pulse-trace-border"][1].name).toBe("Showcase");
   });
+
+  it("adds authored defaults and presets for contours and thermal bloom", () => {
+    expect(defaultNodes.contours.frame).toEqual({
+      width: 1440,
+      height: 900,
+      rotation: 0
+    });
+    expect(presetsByEffect.contours[1].name).toBe("Atlas");
+
+    expect(defaultNodes["thermal-bloom"].assets).toEqual({
+      sourceImage: "fixtures/images/sample-photo.png"
+    });
+    expect(presetsByEffect["thermal-bloom"][1].name).toBe("Instrument Readout");
+  });
 });

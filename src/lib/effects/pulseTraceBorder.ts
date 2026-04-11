@@ -166,32 +166,46 @@ uniform float uWobble;
 
 ${BORDER_SHADER_UTILS}
 
+float wrappedSignedDistance(float sampleCoord, float phase) {
+  return fract(sampleCoord - phase + 0.5) - 0.5;
+}
+
+float traceCoreMask(float sdf, float thicknessPx, float featherPx) {
+  float centerOffset = max(thicknessPx * 0.18, 0.75);
+  float halfWidth = max(thicknessPx * 0.28, 1.0);
+  return 1.0 - smoothstep(halfWidth - featherPx, halfWidth + featherPx, abs(sdf + centerOffset));
+}
+
 void main() {
   vec2 centered = gl_FragCoord.xy - 0.5 * uResolution;
-  vec2 halfSize = max(vec2(18.0), 0.5 * uResolution - vec2(uInsetPx));
-  float radius = clamp(uCornerRadiusPx, 0.0, min(halfSize.x, halfSize.y) - 1.0);
+  float strokeWidth = max(1.0, uThicknessPx);
+  float glowSpreadPx = mix(8.0, 42.0, uGlowSpread);
+  float frameInset = uInsetPx + strokeWidth * 0.34 + glowSpreadPx * 0.16;
+  vec2 halfSize = max(vec2(18.0), 0.5 * uResolution - vec2(frameInset));
+  float radius = clamp(uCornerRadiusPx, 0.0, max(min(halfSize.x, halfSize.y) - 1.0, 0.0));
   float sdf = sdRoundedRect(centered, halfSize, radius);
   float feather = aaWidth(sdf) * 1.15;
-  float glowSpreadPx = mix(10.0, 58.0, uGlowSpread);
-  float band = bandMask(sdf, max(1.0, uThicknessPx), feather);
-  float innerShell = insideShellMask(sdf, 0.0, uThicknessPx * 1.4, feather * 1.45);
+  float band = insideShellMask(sdf, 0.0, strokeWidth, feather * 1.15);
+  float traceCore = traceCoreMask(sdf, strokeWidth, feather);
+  float innerShell = insideShellMask(sdf, 0.0, strokeWidth * 1.45, feather * 1.4);
   float outerShell = outsideShellMask(sdf, 0.0, glowSpreadPx, feather * 1.8);
-  float baseGlow = glowFalloff(sdf, glowSpreadPx) * (0.18 + uGlowStrength * 0.62);
+  float glowGate = smoothstep(-feather, feather * 2.4, sdf);
+  float baseGlow = glowGate * glowFalloff(sdf, glowSpreadPx) * (0.12 + uGlowStrength * 0.46);
 
   vec2 boundary = roundedRectBoundaryPoint(centered, halfSize, radius);
-  float perimeter = roundedRectPerimeter(halfSize, radius);
-  float path = roundedRectPerimeterCoord(boundary, halfSize, radius) / max(perimeter, 0.001);
-  float corner = cornerWeight(boundary, halfSize, radius);
-  float wobbleNoise = fbm(vec2(path * 12.0 + uSeed * 4.3, uTime * 0.22));
-  float pathWobble = (wobbleNoise - 0.5) * mix(0.0, 0.03, uWobble);
-  float pathWidth = bandMask(sdf, max(1.0, uThicknessPx) * (1.0 + (wobbleNoise - 0.5) * uWobble * 0.35), feather);
+  float perimeter = max(roundedRectPerimeter(halfSize, radius), 1.0);
+  float path = roundedRectPerimeterCoord(boundary, halfSize, radius) / perimeter;
+  float corner = pow(cornerWeight(boundary, halfSize, radius), 1.65);
+  float pathNoise = fbm(vec2(path * 10.0 + uSeed * 4.3, uTime * 0.18));
+  float localIntensity = mix(1.0, 0.86 + pathNoise * 0.26, uWobble);
 
   float packetField = 0.0;
   float highlightField = 0.0;
   float trailField = 0.0;
-  float packetSpan = mix(0.02, 0.1, uPacketSize);
-  float trailSpan = packetSpan + mix(0.06, 0.35, uTrailLength);
-  float speed = mix(0.05, 0.42, uPacketSpeed);
+  float haloField = 0.0;
+  float packetSpan = mix(0.012, 0.075, uPacketSize);
+  float trailSpan = packetSpan + mix(0.03, 0.28, uTrailLength);
+  float speed = mix(0.04, 0.38, uPacketSpeed);
 
   for (int index = 0; index < 5; index += 1) {
     if (float(index) >= uPacketCount) {
@@ -200,28 +214,37 @@ void main() {
 
     float packetIndex = float(index);
     float noiseOffset = hash21(vec2(packetIndex + uSeed * 17.0, uSeed * 23.0));
-    float wobble = (noise(vec2(path * 18.0 + packetIndex * 3.7, uTime * 0.65 + noiseOffset * 11.0)) - 0.5) *
-      mix(0.0, 0.06, uWobble);
-    float head = fract(packetIndex / uPacketCount + uTime * speed + noiseOffset * 0.18 + pathWobble + wobble);
-    float delta = fract(head - path + 1.0);
-    float headGlow = exp(-pow(delta / max(packetSpan * 0.62, 0.001), 2.0) * 2.8);
-    float trail = exp(-delta / max(trailSpan, 0.001)) * (1.0 - smoothstep(trailSpan, trailSpan + 0.06, delta));
-    float cornerBoost = 1.0 + corner * (0.28 + uCornerBloom * 1.75);
+    float wobbleNoise = noise(vec2(path * 20.0 + packetIndex * 5.1, uTime * 0.34 + noiseOffset * 9.0));
+    float widthJitter = mix(1.0, 0.84 + wobbleNoise * 0.34, uWobble);
+    float trailJitter = mix(1.0, 0.8 + wobbleNoise * 0.38, uWobble);
+    float head = fract(packetIndex / uPacketCount + uTime * speed + noiseOffset * 0.18);
+    float headDelta = abs(wrappedSignedDistance(path, head));
+    float trailDelta = fract(head - path + 1.0);
+    float headGlow = exp(-pow(headDelta / max(packetSpan * widthJitter, 0.001), 2.0) * 3.6);
+    float trail = exp(-trailDelta / max(trailSpan * trailJitter, 0.001)) *
+      (1.0 - smoothstep(trailSpan, trailSpan + 0.04, trailDelta));
+    float cornerBoost = 1.0 + corner * (0.1 + uCornerBloom * 0.55);
+    float halo = (trail * 0.5 + headGlow * 0.3) * corner * (0.08 + uCornerBloom * 0.46);
 
-    packetField += headGlow * cornerBoost;
-    highlightField += headGlow * (1.2 + corner * uCornerBloom);
+    packetField += headGlow;
+    highlightField += headGlow * cornerBoost;
     trailField += trail * cornerBoost;
+    haloField += halo;
   }
 
-  float energizedBand = pathWidth * (trailField * 0.44 + highlightField * 0.72);
-  float cornerHalo = outerShell * trailField * corner * (0.12 + uCornerBloom * 0.55);
-  float lineBase = band * (0.12 + uGlowStrength * 0.12) + innerShell * 0.05 + baseGlow * 0.12;
-  vec3 trailColor = mix(uTint, uAccentTint, saturate(highlightField * 0.55 + corner * 0.3));
+  float energizedBand = traceCore * localIntensity * (trailField * 0.58 + highlightField * 0.84);
+  float trailGlow = outerShell * trailField * (0.1 + uGlowStrength * 0.34);
+  float cornerHalo = outerShell * haloField;
+  float lineBase = band * (0.14 + uGlowStrength * 0.08) + innerShell * 0.04;
+  float accentMix = saturate(0.08 + highlightField * 0.16 + corner * 0.08);
+  vec3 traceColor = mix(uTint, uAccentTint, accentMix);
+  vec3 headColor = mix(uTint, uAccentTint, saturate(0.14 + packetField * 0.14));
   vec3 color = uTint * lineBase;
-  color += trailColor * (energizedBand + outerShell * trailField * (0.14 + uGlowStrength * 0.54) + cornerHalo);
-  color += uAccentTint * packetField * (0.08 + corner * uCornerBloom * 0.18);
+  color += uTint * baseGlow * 0.7;
+  color += traceColor * (energizedBand + trailGlow + cornerHalo);
+  color += headColor * packetField * traceCore * (0.12 + corner * uCornerBloom * 0.12);
 
-  float alpha = lineBase * 0.5 + energizedBand * 0.95 + outerShell * trailField * 0.26 + cornerHalo * 0.72;
+  float alpha = lineBase * 0.56 + energizedBand * 0.98 + trailGlow * 0.42 + cornerHalo * 0.68 + baseGlow * 0.24;
   outColor = vec4(clamp(color, 0.0, 1.0), clamp(alpha, 0.0, 1.0));
 }
 `

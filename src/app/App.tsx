@@ -6,7 +6,7 @@ import {
   type CSSProperties,
   type KeyboardEvent as ReactKeyboardEvent
 } from "react";
-import { ShaderRenderer } from "../lib";
+import { GhostWhooshButton, ShaderRenderer, effectOrder } from "../lib";
 import { getEffectDefinition } from "../lib/registry";
 import { defaultNodes, presetsByEffect, resolveAssetSource } from "../lib/playground/examples";
 import {
@@ -21,7 +21,7 @@ import type {
   ParameterControl,
   Quality
 } from "../lib/types";
-import { hexToRgb } from "../lib/runtime/utils";
+import { cssColorToHex, hexToRgb } from "../lib/runtime/utils";
 
 const QUALITY_OPTIONS: Quality[] = ["auto", "high", "medium", "low"];
 const repositoryBaseUrl = ((import.meta.env.VITE_REPOSITORY_URL as string | undefined) ?? "")
@@ -29,20 +29,12 @@ const repositoryBaseUrl = ((import.meta.env.VITE_REPOSITORY_URL as string | unde
   .replace(/\/$/, "");
 
 type ViewMode = "preview" | "payload";
-type PlaygroundEffectId = Exclude<EffectId, "button-ghost-whoosh" | "ghost-whoosh-button" | "pulse-trace-border">;
-type BurstEffectId = "ghost-frame" | "button-emitter-aura";
-type ButtonPreviewEffectId = "button-emitter-aura";
+type PlaygroundEffectId = EffectId;
+type BurstEffectId = "ghost-frame" | "button-emitter-aura" | "button-ghost-whoosh";
+type ButtonPreviewEffectId = "button-emitter-aura" | "button-ghost-whoosh";
 
-const PLAYGROUND_EFFECT_IDS = [
-  "aurora-field",
-  "caustic-pool",
-  "voronoi-caustics",
-  "liquid-distortion",
-  "ghost-frame",
-  "button-emitter-aura"
-] as const satisfies readonly PlaygroundEffectId[];
-
-const BURST_EFFECT_IDS = ["ghost-frame", "button-emitter-aura"] as const;
+const PLAYGROUND_EFFECT_IDS = effectOrder as readonly PlaygroundEffectId[];
+const BURST_EFFECT_IDS = ["ghost-frame", "button-emitter-aura", "button-ghost-whoosh"] as const;
 
 type EffectPresentation = {
   listDescription: string;
@@ -68,7 +60,7 @@ type PreviewChrome = {
   interactionLabel?: string;
 };
 
-const BUTTON_EMITTER_GEOMETRY_KEYS = [
+const BUTTON_GEOMETRY_KEYS = [
   "buttonCenterXPx",
   "buttonCenterYPx",
   "buttonWidthPx",
@@ -76,12 +68,40 @@ const BUTTON_EMITTER_GEOMETRY_KEYS = [
   "buttonRadiusPx"
 ] as const;
 
+const DOC_BASENAME_BY_EFFECT: Record<EffectId, string> = {
+  "aurora-field": "aurora",
+  "caustic-pool": "caustic-pool",
+  contours: "contours",
+  "voronoi-caustics": "voronoi-caustics",
+  "holographic-foil": "holographic-foil",
+  "ink-bleed": "ink-bleed",
+  "jelly-spiral": "jelly-spiral",
+  "lava-lamp": "lava-lamp",
+  "liquid-distortion": "liquid-distortion",
+  "orbit-confetti": "orbit-confetti",
+  "paper-fibers": "paper-fibers",
+  "plasma-checker": "plasma-checker",
+  "prism-refraction": "prism-refraction",
+  "riso-misprint": "riso-misprint",
+  "stained-glass": "stained-glass",
+  "star-tunnel": "star-tunnel",
+  "thermal-bloom": "thermal-bloom",
+  "truchet-neon": "truchet-neon",
+  "velvet-mesh": "velvet-mesh",
+  "vhs-poster": "vhs-poster",
+  "ghost-frame": "ghost-frame",
+  "button-emitter-aura": "button-emitter-aura",
+  "button-ghost-whoosh": "button-ghost-whoosh",
+  "ghost-whoosh-button": "ghost-whoosh-button",
+  "pulse-trace-border": "pulse-trace-border"
+};
+
 function isBurstEffect(effectId: PlaygroundEffectId): effectId is BurstEffectId {
-  return effectId === "ghost-frame" || effectId === "button-emitter-aura";
+  return effectId === "ghost-frame" || effectId === "button-emitter-aura" || effectId === "button-ghost-whoosh";
 }
 
 function isButtonPreviewEffect(effectId: PlaygroundEffectId): effectId is ButtonPreviewEffectId {
-  return effectId === "button-emitter-aura";
+  return effectId === "button-emitter-aura" || effectId === "button-ghost-whoosh";
 }
 
 function roundToPrecision(value: number, digits = 2) {
@@ -125,112 +145,138 @@ function resetBurstParamsForEffect(effectId: BurstEffectId, state: PlaygroundEff
   };
 }
 
-const effectPresentation: Record<PlaygroundEffectId, EffectPresentation> = {
-  "aurora-field": {
-    listDescription: "Layered color ribbons for atmospheric backgrounds and motion surfaces.",
-    toolbarDescription: "Procedural atmospheric ribbons with palette mapping and soft motion.",
-    previewHint: "Move cursor to perturb the field",
-    previewUseCase: "Hero surfaces / ambient panels",
-    notes:
-      "A procedural color field suited to large-format backgrounds where motion should stay soft and the foreground still needs contrast.",
-    support: ["WebGL2", "Opaque output", "No texture input"],
-    sourcePath: "docs/aurora.md"
-  },
-  "caustic-pool": {
-    listDescription: "Image-first pool-floor treatment with smooth water warp and clean bright caustic light.",
-    toolbarDescription: "A swimming-pool floor shader that submerges an optional image beneath a calm water warp and a restrained caustic lattice.",
-    previewHint: "Tune distortion, caustic, and size to balance the submerged photo against the light lattice",
-    previewUseCase: "Hero backgrounds / image-backed pool treatments / water-themed panels",
-    notes:
-      "Caustic Pool now treats the source image as the pool floor first, then adds broad water refraction and a clean Voronoi-derived caustic overlay without procedural background noise competing with the photo.",
-    support: ["WebGL2", "Opaque output", "Optional source image"],
-    sourcePath: "docs/caustic-pool.md"
-  },
-  "voronoi-caustics": {
-    listDescription: "Stylized cellular light webs with drifting Voronoi ridges and calmer water-tinted gaps.",
-    toolbarDescription: "A stylized Voronoi caustic web built from warped cellular ridges, contrast shaping, and soft halo lift.",
-    previewHint: "Tune scale, line width, and contrast to shape the cellular web",
-    previewUseCase: "Decorative backgrounds / aquatic UI / stylized light surfaces",
-    notes:
-      "Voronoi Caustics keeps the original cellular ridge language but exposes it honestly as a stylized web, with separate controls for cell scale, line width, contrast, and drift.",
-    support: ["WebGL2", "Opaque output", "No texture input"],
-    sourcePath: "docs/voronoi-caustics.md"
-  },
-  "liquid-distortion": {
-    listDescription: "Image-backed liquid refraction with restrained blur, motion, and glint.",
-    toolbarDescription: "Animated image-backed distortion tuned for liquid-like refraction.",
-    previewHint: "Use the fixture image to inspect refraction",
-    previewUseCase: "Media cards / distorted image treatments",
-    notes:
-      "A refractive distortion treatment for photographs and other image-backed surfaces. The demo uses the bundled sample image so the blur, motion, and highlight glint remain visible.",
-    support: ["WebGL2", "Transparent output", "Requires a source image"],
-    sourcePath: "docs/liquid-distortion.md"
-  },
-  "ghost-frame": {
-    listDescription: "Center-sourced vapor that catches on a rounded frame and blooms on burst.",
-    toolbarDescription: "A spectral rounded frame with breathing vapor and a host-driven poof burst.",
-    previewHint: "Click the card to trigger a poof burst",
-    previewUseCase: "Haunted cards / ritual UI / atmospheric overlays",
-    notes:
-      "Ghost Frame keeps the center legible while vapor appears to leak outward from within the card and condense on the frame shell.",
-    support: ["WebGL2", "Transparent output", "Best on dark or photographic backdrops"],
-    sourcePath: "docs/ghost-frame.md"
-  },
-  "button-emitter-aura": {
-    listDescription: "A button-local aura shell with ghost and fire looks built from one shared core.",
-    toolbarDescription: "A rounded button emitter with authored ghost and fire presets plus host-driven burst control.",
-    previewHint: "Click the button to trigger an aura burst",
-    previewUseCase: "Buttons / spectral CTAs / elemental actions",
-    notes:
-      "Button Emitter Aura keeps the shader anchored to the measured button rectangle instead of the full host canvas, so the wisps read as emitted from the button itself.",
-    support: ["WebGL2", "Transparent output", "Host passes button geometry"],
-    sourcePath: "docs/button-emitter-aura.md"
+function buildDefaultSupport(definition: AnyEffectDefinition) {
+  return [
+    "WebGL2",
+    definition.alphaMode === "transparent" ? "Transparent output" : "Opaque output",
+    definition.assetSlots.length > 0
+      ? `${definition.assetSlots[0]?.required ? "Requires" : "Supports"} a source image`
+      : "No texture input"
+  ];
+}
+
+function defaultPreviewHint(effectId: EffectId, definition: AnyEffectDefinition) {
+  if (effectId === "ghost-frame") {
+    return "Click the card to trigger a poof burst";
   }
+
+  if (effectId === "button-emitter-aura" || effectId === "button-ghost-whoosh") {
+    return "Click the demo button to trigger the host-driven burst";
+  }
+
+  if (effectId === "ghost-whoosh-button") {
+    return "Click the standalone button to inspect the component-owned burst timeline";
+  }
+
+  if (definition.assetSlots.length > 0) {
+    return "Use the bundled sample image to tune the treatment against real content";
+  }
+
+  return "Adjust parameters and inspect the authored surface in the preview stage";
+}
+
+function defaultPreviewUseCase(effectId: EffectId, definition: AnyEffectDefinition) {
+  if (effectId.includes("button")) {
+    return "Buttons / CTAs / interactive actions";
+  }
+
+  if (effectId.includes("border") || effectId.includes("frame")) {
+    return "Cards / borders / UI surfaces";
+  }
+
+  if (definition.assetSlots.length > 0) {
+    return "Image treatments / posters / media surfaces";
+  }
+
+  return "Backgrounds / decorative surfaces / hero panels";
+}
+
+function defaultNotes(effectId: EffectId, definition: AnyEffectDefinition) {
+  if (effectId === "ghost-whoosh-button") {
+    return "This preview uses the higher-level React component so the measured button geometry and dual-layer burst timeline stay aligned with the shipped component contract.";
+  }
+
+  if (effectId === "button-ghost-whoosh") {
+    return "This preview uses a real DOM button and writes its measured bounds into the low-level shader params so the raw study can be tuned in the generic playground.";
+  }
+
+  return definition.summary;
+}
+
+const effectPresentation = Object.fromEntries(
+  PLAYGROUND_EFFECT_IDS.map((effectId) => {
+    const definition = getEffectDefinition(effectId) as AnyEffectDefinition;
+    return [
+      effectId,
+      {
+        listDescription: definition.summary,
+        toolbarDescription: definition.summary,
+        previewHint: defaultPreviewHint(effectId, definition),
+        previewUseCase: defaultPreviewUseCase(effectId, definition),
+        notes: defaultNotes(effectId, definition),
+        support: buildDefaultSupport(definition),
+        sourcePath: `docs/${DOC_BASENAME_BY_EFFECT[effectId]}.md`
+      } satisfies EffectPresentation
+    ];
+  })
+) as Record<PlaygroundEffectId, EffectPresentation>;
+
+const previewChromeByEffect = Object.fromEntries(
+  PLAYGROUND_EFFECT_IDS.map((effectId) => [effectId, { showcasePadding: 0 } satisfies PreviewChrome])
+) as Record<PlaygroundEffectId, PreviewChrome>;
+
+previewChromeByEffect["ghost-frame"] = {
+  showcasePadding: 40,
+  frameShellClassName: "preview-stage__frame-shell--ghost",
+  innerClassName: "preview-stage__inner--frame-overlay",
+  showcaseShellClassName: "preview-showcase-shell preview-showcase-shell--ghost-frame",
+  overlay: {
+    className: "showcase-card showcase-card--ghost-frame",
+    eyebrow: "UI card",
+    title: "Ghost Frame",
+    body: "Center-born vapor leaks into the frame, then dissipates back into the dark."
+  },
+  interactionLabel: "Trigger Ghost Frame burst"
 };
 
-const previewChromeByEffect: Record<PlaygroundEffectId, PreviewChrome> = {
-  "aurora-field": {
-    showcasePadding: 0
-  },
-  "caustic-pool": {
-    showcasePadding: 0
-  },
-  "voronoi-caustics": {
-    showcasePadding: 0
-  },
-  "liquid-distortion": {
-    showcasePadding: 0
-  },
-  "ghost-frame": {
-    showcasePadding: 40,
-    frameShellClassName: "preview-stage__frame-shell--ghost",
-    innerClassName: "preview-stage__inner--frame-overlay",
-    showcaseShellClassName: "preview-showcase-shell preview-showcase-shell--ghost-frame",
-    overlay: {
-      className: "showcase-card showcase-card--ghost-frame",
-      eyebrow: "UI card",
-      title: "Ghost Frame",
-      body: "Center-born vapor leaks into the frame, then dissipates back into the dark."
-    },
-    interactionLabel: "Trigger Ghost Frame burst"
-  },
-  "button-emitter-aura": {
-    showcasePadding: 36,
-    frameShellClassName: "preview-stage__frame-shell--button-emitter",
-    innerClassName: "preview-stage__inner--button-emitter",
-    showcaseShellClassName: "preview-showcase-shell preview-showcase-shell--button-emitter"
+previewChromeByEffect["button-emitter-aura"] = {
+  showcasePadding: 36,
+  frameShellClassName: "preview-stage__frame-shell--button-emitter",
+  innerClassName: "preview-stage__inner--button-emitter",
+  showcaseShellClassName: "preview-showcase-shell preview-showcase-shell--button-emitter"
+};
+
+previewChromeByEffect["button-ghost-whoosh"] = {
+  showcasePadding: 36,
+  frameShellClassName: "preview-stage__frame-shell--button-ghost-whoosh",
+  innerClassName: "preview-stage__inner--button-ghost-whoosh",
+  showcaseShellClassName: "preview-showcase-shell preview-showcase-shell--button-ghost-whoosh"
+};
+
+previewChromeByEffect["ghost-whoosh-button"] = {
+  showcasePadding: 36,
+  frameShellClassName: "preview-stage__frame-shell--ghost-whoosh",
+  innerClassName: "preview-stage__inner--ghost-whoosh-button",
+  showcaseShellClassName: "preview-showcase-shell preview-showcase-shell--ghost-whoosh-button"
+};
+
+previewChromeByEffect["pulse-trace-border"] = {
+  showcasePadding: 36,
+  frameShellClassName: "preview-stage__frame-shell--pulse",
+  innerClassName: "preview-stage__inner--pulse-trace",
+  showcaseShellClassName: "preview-showcase-shell preview-showcase-shell--pulse-trace",
+  overlay: {
+    className: "showcase-card showcase-card--pulse-trace",
+    eyebrow: "CTA border",
+    title: "Pulse Trace",
+    body: "Traveling light packets skim the frame, stack trails, and flare around the corners."
   }
 };
 
 function createInitialStates() {
-  return {
-    "aurora-field": createPlaygroundState(defaultNodes["aurora-field"]),
-    "caustic-pool": createPlaygroundState(defaultNodes["caustic-pool"]),
-    "voronoi-caustics": createPlaygroundState(defaultNodes["voronoi-caustics"]),
-    "liquid-distortion": createPlaygroundState(defaultNodes["liquid-distortion"]),
-    "ghost-frame": createPlaygroundState(defaultNodes["ghost-frame"]),
-    "button-emitter-aura": createPlaygroundState(defaultNodes["button-emitter-aura"])
-  } satisfies Record<PlaygroundEffectId, PlaygroundEffectState>;
+  return Object.fromEntries(
+    PLAYGROUND_EFFECT_IDS.map((effectId) => [effectId, createPlaygroundState(defaultNodes[effectId])])
+  ) as Record<PlaygroundEffectId, PlaygroundEffectState>;
 }
 
 function computePreviewScale(
@@ -400,31 +446,63 @@ export function App() {
     selectedEffectId === "button-emitter-aura" &&
     buttonEmitterDirectionalBias > 0.55 &&
     buttonEmitterDirectionY < -0.35;
-  const buttonPreviewVariantClassName = buttonEmitterLooksFireLike
-    ? "button-emitter-demo--fire"
-    : "button-emitter-demo--ghost";
-  const buttonPreviewButtonClassName = buttonEmitterLooksFireLike
-    ? "button-emitter-demo__button--fire"
-    : "button-emitter-demo__button--ghost";
-  const buttonPreviewLabel = buttonEmitterLooksFireLike ? "Fire Button" : "Ghost Button";
+  const buttonPreviewVariantClassName =
+    selectedEffectId === "button-ghost-whoosh"
+      ? "button-emitter-demo--ghost-whoosh-2"
+      : buttonEmitterLooksFireLike
+        ? "button-emitter-demo--fire"
+        : "button-emitter-demo--ghost";
+  const buttonPreviewButtonClassName =
+    selectedEffectId === "button-ghost-whoosh"
+      ? "button-emitter-demo__button--ghost-whoosh-2"
+      : buttonEmitterLooksFireLike
+        ? "button-emitter-demo__button--fire"
+        : "button-emitter-demo__button--ghost";
+  const buttonPreviewLabel =
+    selectedEffectId === "button-ghost-whoosh"
+      ? "Ghost Whoosh 2"
+      : buttonEmitterLooksFireLike
+        ? "Fire Button"
+        : "Ghost Button";
   const buttonEmitterThemeStyle = {
     "--button-emitter-accent-soft": rgbaFromHex(
       buttonEmitterTintA,
-      buttonEmitterLooksFireLike ? 0.06 + buttonEmitterGlowStrength * 0.08 : 0.05 + buttonEmitterGlowStrength * 0.08
+      selectedEffectId === "button-ghost-whoosh"
+        ? 0.08 + buttonEmitterGlowStrength * 0.08
+        : buttonEmitterLooksFireLike
+          ? 0.06 + buttonEmitterGlowStrength * 0.08
+          : 0.05 + buttonEmitterGlowStrength * 0.08
     ),
     "--button-emitter-accent-strong": rgbaFromHex(
       buttonEmitterTintB,
-      buttonEmitterLooksFireLike ? 0.22 + buttonEmitterGlowStrength * 0.08 : 0.16 + buttonEmitterGlowStrength * 0.08
+      selectedEffectId === "button-ghost-whoosh"
+        ? 0.2 + buttonEmitterGlowStrength * 0.1
+        : buttonEmitterLooksFireLike
+          ? 0.22 + buttonEmitterGlowStrength * 0.08
+          : 0.16 + buttonEmitterGlowStrength * 0.08
     ),
     "--button-emitter-border": rgbaFromHex(
       buttonEmitterTintB,
-      buttonEmitterLooksFireLike ? 0.26 + buttonEmitterGlowStrength * 0.08 : 0.16 + buttonEmitterGlowStrength * 0.08
+      selectedEffectId === "button-ghost-whoosh"
+        ? 0.22 + buttonEmitterGlowStrength * 0.08
+        : buttonEmitterLooksFireLike
+          ? 0.26 + buttonEmitterGlowStrength * 0.08
+          : 0.16 + buttonEmitterGlowStrength * 0.08
     ),
     "--button-emitter-shadow": rgbaFromHex(
       buttonEmitterTintB,
-      buttonEmitterLooksFireLike ? 0.16 + buttonEmitterGlowStrength * 0.1 : 0.1 + buttonEmitterGlowStrength * 0.08
+      selectedEffectId === "button-ghost-whoosh"
+        ? 0.12 + buttonEmitterGlowStrength * 0.08
+        : buttonEmitterLooksFireLike
+          ? 0.16 + buttonEmitterGlowStrength * 0.1
+          : 0.1 + buttonEmitterGlowStrength * 0.08
     ),
-    "--button-emitter-text": buttonEmitterLooksFireLike ? "#fff6ea" : "#f7fbff"
+    "--button-emitter-text":
+      selectedEffectId === "button-ghost-whoosh"
+        ? "#f2fbff"
+        : buttonEmitterLooksFireLike
+          ? "#fff6ea"
+          : "#f7fbff"
   } as CSSProperties;
   const buttonEmitterButtonStyle = {
     width: buttonEmitterWidth,
@@ -464,7 +542,7 @@ export function App() {
 
       setStates((previous) => {
         const currentParams = previous[selectedEffectId].params as Record<string, unknown>;
-        const hasChanged = BUTTON_EMITTER_GEOMETRY_KEYS.some((key) => {
+        const hasChanged = BUTTON_GEOMETRY_KEYS.some((key) => {
           const currentValue = Number(currentParams[key] ?? 0);
           return Math.abs(currentValue - nextGeometry[key]) > 0.01;
         });
@@ -631,21 +709,62 @@ export function App() {
       );
     }
 
-    if (control.kind === "color") {
+    if (control.kind === "select") {
+      const selectedValue = typeof value === "string" ? value : control.options[0]?.value ?? "";
+
       return (
-        <label className="field field--color" key={control.name}>
+        <label className="field" key={control.name}>
           <span>{control.label}</span>
-          <input
-            className="field__color"
+          <select
+            className="field__input"
             onChange={(event) =>
               updateParams({
                 ...currentState.params,
                 [control.name]: event.target.value
               })
             }
-            type="color"
-            value={typeof value === "string" ? value : "#ffffff"}
-          />
+            value={selectedValue}
+          >
+            {control.options.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </label>
+      );
+    }
+
+    if (control.kind === "color") {
+      const colorValue = typeof value === "string" ? value : "#ffffff";
+
+      return (
+        <label className="field field--color" key={control.name}>
+          <span>{control.label}</span>
+          <div className="field__color-row">
+            <input
+              className="field__input"
+              onChange={(event) =>
+                updateParams({
+                  ...currentState.params,
+                  [control.name]: event.target.value
+                })
+              }
+              type="text"
+              value={colorValue}
+            />
+            <input
+              className="field__color"
+              onChange={(event) =>
+                updateParams({
+                  ...currentState.params,
+                  [control.name]: event.target.value
+                })
+              }
+              type="color"
+              value={cssColorToHex(colorValue)}
+            />
+          </div>
         </label>
       );
     }
@@ -713,7 +832,13 @@ export function App() {
     <ShaderRenderer
       animate={currentState.animate}
       assets={previewAssets}
-      className={isButtonPreviewEffect(selectedEffectId) ? "preview-renderer preview-renderer--button-emitter" : "preview-renderer"}
+      className={[
+        "preview-renderer",
+        selectedEffectId === "button-emitter-aura" ? "preview-renderer--button-emitter" : undefined,
+        selectedEffectId === "button-ghost-whoosh" ? "preview-renderer--button-ghost-whoosh" : undefined
+      ]
+        .filter(Boolean)
+        .join(" ")}
       effectId={selectedEffectId}
       height={currentState.height}
       params={currentState.params}
@@ -739,7 +864,7 @@ export function App() {
         transform: `scale(${previewScale})`
       }}
     >
-      {selectedEffectId === "button-emitter-aura" ? (
+      {isButtonPreviewEffect(selectedEffectId) ? (
         <div
           className={[
             "button-emitter-demo",
@@ -756,13 +881,42 @@ export function App() {
               "button-emitter-demo__button",
               buttonPreviewButtonClassName
             ].join(" ")}
-            onClick={() => triggerBurstAnimation("button-emitter-aura")}
+            onClick={() => triggerBurstAnimation(selectedEffectId)}
             ref={buttonEmitterButtonRef}
             style={buttonEmitterButtonStyle}
             type="button"
           >
             {buttonPreviewLabel}
           </button>
+        </div>
+      ) : selectedEffectId === "ghost-whoosh-button" ? (
+        <div
+          className="ghost-whoosh-demo"
+          style={{
+            width: "100%",
+            height: "100%"
+          }}
+        >
+          <GhostWhooshButton
+            animate={currentState.animate}
+            effect={currentState.params}
+            quality={currentState.quality}
+            seed={currentState.seedInput.trim() ? currentState.seedInput : undefined}
+            time={currentState.manualTime ? currentState.time : undefined}
+          >
+            Stored Smoke CTA
+          </GhostWhooshButton>
+        </div>
+      ) : selectedEffectId === "pulse-trace-border" && previewChrome.overlay ? (
+        <div className="pulse-trace-demo">
+          {shaderPreview}
+          <div className="pulse-trace-demo__content">
+            <div className="pulse-trace-demo__copy">
+              <p className="showcase-card__eyebrow">{previewChrome.overlay.eyebrow}</p>
+              <h3>{previewChrome.overlay.title}</h3>
+              <p>{previewChrome.overlay.body}</p>
+            </div>
+          </div>
         </div>
       ) : (
         <>

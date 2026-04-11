@@ -199,6 +199,19 @@ export function setUniformVec3(
   }
 }
 
+export function setUniformVec4(
+  gl: WebGL2RenderingContext,
+  location: WebGLUniformLocation | null,
+  x: number,
+  y: number,
+  z: number,
+  w: number
+) {
+  if (location) {
+    gl.uniform4f(location, x, y, z, w);
+  }
+}
+
 export function setUniformVec3Array(
   gl: WebGL2RenderingContext,
   location: WebGLUniformLocation | null,

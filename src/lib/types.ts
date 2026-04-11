@@ -3,8 +3,24 @@ import type { CSSProperties } from "react";
 export type EffectId =
   | "aurora-field"
   | "caustic-pool"
+  | "contours"
   | "voronoi-caustics"
+  | "holographic-foil"
+  | "ink-bleed"
+  | "jelly-spiral"
+  | "lava-lamp"
   | "liquid-distortion"
+  | "orbit-confetti"
+  | "paper-fibers"
+  | "plasma-checker"
+  | "prism-refraction"
+  | "riso-misprint"
+  | "stained-glass"
+  | "star-tunnel"
+  | "thermal-bloom"
+  | "truchet-neon"
+  | "velvet-mesh"
+  | "vhs-poster"
   | "ghost-frame"
   | "button-emitter-aura"
   | "button-ghost-whoosh"
@@ -63,10 +79,22 @@ export type PaletteControl<TParams extends Record<string, unknown>> = {
   description?: string;
 };
 
+export type SelectControl<TParams extends Record<string, unknown>> = {
+  kind: "select";
+  name: Extract<keyof TParams, string>;
+  label: string;
+  options: Array<{
+    label: string;
+    value: string;
+  }>;
+  description?: string;
+};
+
 export type ParameterControl<TParams extends Record<string, unknown>> =
   | RangeControl<TParams>
   | ColorControl<TParams>
-  | PaletteControl<TParams>;
+  | PaletteControl<TParams>
+  | SelectControl<TParams>;
 
 export type TextureResource = {
   texture: WebGLTexture;

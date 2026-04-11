@@ -215,4 +215,26 @@ describe("effect registry", () => {
     expect(params.trailLength).toBe(0);
     expect(params.accentTint).toBe("#fedcba");
   });
+
+  it("accepts rgba tints for prism refraction and clamps its numeric controls", () => {
+    const params = effectRegistry["prism-refraction"].sanitizeParams({
+      refraction: 3,
+      dispersion: -1,
+      tint: "rgba(255, 200, 120, 0.25)"
+    });
+
+    expect(params.refraction).toBe(1);
+    expect(params.dispersion).toBe(0);
+    expect(params.tint).toBe("rgba(255, 200, 120, 0.25)");
+  });
+
+  it("validates the thermal bloom select control and falls back to the default palette preset", () => {
+    const params = effectRegistry["thermal-bloom"].sanitizeParams({
+      palettePreset: "infrared",
+      bloom: 2
+    } as Record<string, unknown>);
+
+    expect(params.palettePreset).toBe(effectRegistry["thermal-bloom"].defaults.palettePreset);
+    expect(params.bloom).toBe(1);
+  });
 });

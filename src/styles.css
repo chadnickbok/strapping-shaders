@@ -262,6 +262,8 @@ img {
   flex-direction: column;
   gap: 10px;
   border-right: 1px solid var(--line-subtle);
+  min-height: 0;
+  overflow-y: auto;
 }
 
 .playground-main {
@@ -459,6 +461,13 @@ img {
   overflow: visible;
 }
 
+.preview-stage__inner--pulse-trace {
+  background: transparent;
+  border-radius: 0;
+  box-shadow: none;
+  overflow: visible;
+}
+
 .preview-stage__inner--button-emitter {
   background: transparent;
   border-radius: 0;
@@ -530,6 +539,63 @@ img {
 .showcase-card {
   position: absolute;
   z-index: 1;
+}
+
+.pulse-trace-demo {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  border-radius: 30px;
+  background:
+    radial-gradient(circle at 18% 18%, rgba(120, 196, 233, 0.18), transparent 34%),
+    linear-gradient(135deg, rgba(19, 42, 60, 0.98) 0%, rgba(10, 21, 34, 0.97) 46%, rgba(6, 13, 22, 0.99) 100%);
+  box-shadow:
+    inset 0 0 0 1px rgba(180, 223, 255, 0.05),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.pulse-trace-demo::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(90deg, rgba(88, 149, 186, 0.18) 0%, rgba(32, 64, 88, 0.12) 32%, transparent 62%),
+    radial-gradient(circle at 78% 50%, rgba(7, 14, 23, 0.24), transparent 36%);
+  pointer-events: none;
+}
+
+.pulse-trace-demo__content {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 26px 28px;
+  pointer-events: none;
+}
+
+.pulse-trace-demo__copy {
+  width: min(100%, 310px);
+  padding: 12px 0 12px 34px;
+  background: linear-gradient(90deg, rgba(6, 16, 28, 0) 0%, rgba(6, 16, 28, 0.28) 18%, rgba(6, 16, 28, 0.82) 100%);
+}
+
+.pulse-trace-demo__copy h3 {
+  margin: 10px 0 0;
+  color: #ffffff;
+  font-size: 30px;
+  font-weight: 600;
+  line-height: 1.06;
+}
+
+.pulse-trace-demo__copy p:last-child {
+  margin: 12px 0 0;
+  max-width: 12ch;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 16px;
+  line-height: 1.5;
 }
 
 .button-emitter-demo {
@@ -867,9 +933,17 @@ img {
 }
 
 .field--color {
-  flex-direction: row;
+  align-items: stretch;
+}
+
+.field__color-row {
+  display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 8px;
+}
+
+.field__color-row .field__input {
+  flex: 1;
 }
 
 .field__color {
@@ -1073,6 +1147,29 @@ img {
     right: 24px;
     bottom: 22px;
     padding: 16px 18px;
+  }
+
+  .pulse-trace-demo {
+    border-radius: 24px;
+  }
+
+  .pulse-trace-demo__content {
+    justify-content: flex-start;
+    padding: 22px 24px;
+  }
+
+  .pulse-trace-demo__copy {
+    width: min(100%, 280px);
+    padding: 12px 0 12px 20px;
+    background: linear-gradient(90deg, rgba(6, 16, 28, 0.1) 0%, rgba(6, 16, 28, 0.78) 100%);
+  }
+
+  .pulse-trace-demo__copy h3 {
+    font-size: 24px;
+  }
+
+  .pulse-trace-demo__copy p:last-child {
+    max-width: 16ch;
   }
 
   .showcase-card h3 {
