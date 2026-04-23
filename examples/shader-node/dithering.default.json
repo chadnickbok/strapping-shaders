@@ -1,0 +1,28 @@
+{
+  "id": "node-dithering-default",
+  "type": "shader",
+  "effectId": "dithering",
+  "frame": {
+    "width": 1280,
+    "height": 720,
+    "rotation": 0
+  },
+  "params": {
+    "mode": "digital",
+    "pixelScale": 0.42,
+    "cameraSwing": 0.52,
+    "ballTravel": 0.58,
+    "ballSize": 0.6,
+    "heroBayerMix": 0.62,
+    "refinement": 0.45,
+    "soften": 0.28,
+    "inkColor": "#0f0f0f",
+    "paperColor": "#f6f4ee"
+  },
+  "seed": "dithering-default",
+  "exportOverrides": {
+    "quality": "auto",
+    "animate": true,
+    "time": 0
+  }
+}

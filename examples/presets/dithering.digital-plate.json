@@ -1,0 +1,22 @@
+{
+  "name": "Digital Plate",
+  "effectId": "dithering",
+  "description": "Crisp 1-bit output with screen-offset stabilization and a stronger hero Bayer structure.",
+  "tags": [
+    "1-bit",
+    "obra-dinn",
+    "sharp"
+  ],
+  "params": {
+    "mode": "digital",
+    "pixelScale": 0.38,
+    "cameraSwing": 0.56,
+    "ballTravel": 0.62,
+    "ballSize": 0.58,
+    "heroBayerMix": 0.72,
+    "refinement": 0.28,
+    "soften": 0.08,
+    "inkColor": "#101010",
+    "paperColor": "#f7f5ef"
+  }
+}

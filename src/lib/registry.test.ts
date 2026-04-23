@@ -78,6 +78,62 @@ describe("effect registry", () => {
     expect(params.highlight).toBe(1);
   });
 
+  it("clamps cinematic bokeh and flowing gradient controls into the documented ranges", () => {
+    const bokeh = effectRegistry["cinematic-bokeh"].sanitizeParams({
+      focus: -2,
+      focusSpread: 0,
+      aperture: 4,
+      bladeCount: 99
+    });
+    const flowing = effectRegistry["flowing-gradient"].sanitizeParams({
+      waveHeight: 4,
+      separation: -1,
+      grain: 2,
+      palette: ["#ffffff"]
+    });
+
+    expect(bokeh.focus).toBe(0);
+    expect(bokeh.focusSpread).toBe(0.02);
+    expect(bokeh.aperture).toBe(1);
+    expect(bokeh.bladeCount).toBe(8);
+    expect(flowing.waveHeight).toBe(1);
+    expect(flowing.separation).toBe(0);
+    expect(flowing.grain).toBe(1);
+    expect(flowing.palette).toEqual(effectRegistry["flowing-gradient"].defaults.palette);
+  });
+
+  it("validates the new material and print shaders", () => {
+    const soap = effectRegistry["soap-film-interference"].sanitizeParams({
+      baseTint: "bubble",
+      opacity: 2
+    });
+    const acrylic = effectRegistry["frosted-acrylic"].sanitizeParams({
+      tint: "glass",
+      blur: -1,
+      thickness: 4
+    });
+    const moire = effectRegistry["moire-silk"].sanitizeParams({
+      palette: ["#ffffff", "#000000"],
+      rotationDeg: 999
+    });
+    const studio = effectRegistry["studio-dither-fade"].sanitizeParams({
+      paperTint: "newsprint",
+      fade: -1,
+      paperGrain: 4
+    });
+
+    expect(soap.baseTint).toBe(effectRegistry["soap-film-interference"].defaults.baseTint);
+    expect(soap.opacity).toBe(1);
+    expect(acrylic.tint).toBe(effectRegistry["frosted-acrylic"].defaults.tint);
+    expect(acrylic.blur).toBe(0);
+    expect(acrylic.thickness).toBe(1);
+    expect(moire.palette).toEqual(effectRegistry["moire-silk"].defaults.palette);
+    expect(moire.rotationDeg).toBe(180);
+    expect(studio.paperTint).toBe(effectRegistry["studio-dither-fade"].defaults.paperTint);
+    expect(studio.fade).toBe(0);
+    expect(studio.paperGrain).toBe(1);
+  });
+
   it("ignores legacy liquid distortion parameter names", () => {
     const params = effectRegistry["liquid-distortion"].sanitizeParams({
       shimmer: 1,
@@ -236,5 +292,31 @@ describe("effect registry", () => {
 
     expect(params.palettePreset).toBe(effectRegistry["thermal-bloom"].defaults.palettePreset);
     expect(params.bloom).toBe(1);
+  });
+
+  it("validates dithering mode selection and clamps the hybrid controls", () => {
+    const params = effectRegistry.dithering.sanitizeParams({
+      mode: "museum",
+      pixelScale: -1,
+      cameraSwing: 2,
+      ballTravel: -4,
+      ballSize: 3,
+      heroBayerMix: 8,
+      refinement: -2,
+      soften: 2,
+      inkColor: "#cccccc",
+      paperColor: "linen"
+    } as Record<string, unknown>);
+
+    expect(params.mode).toBe(effectRegistry.dithering.defaults.mode);
+    expect(params.pixelScale).toBe(0);
+    expect(params.cameraSwing).toBe(1);
+    expect(params.ballTravel).toBe(0);
+    expect(params.ballSize).toBe(1);
+    expect(params.heroBayerMix).toBe(1);
+    expect(params.refinement).toBe(0);
+    expect(params.soften).toBe(1);
+    expect(params.inkColor).toBe("#cccccc");
+    expect(params.paperColor).toBe(effectRegistry.dithering.defaults.paperColor);
   });
 });

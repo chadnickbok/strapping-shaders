@@ -1,0 +1,22 @@
+{
+  "name": "Hero Inspection",
+  "effectId": "dithering",
+  "description": "Pushes structured dithering and local detail refinement on the sphere for a more inspectable hero treatment.",
+  "tags": [
+    "1-bit",
+    "detail",
+    "hero"
+  ],
+  "params": {
+    "mode": "hero-detail",
+    "pixelScale": 0.51,
+    "cameraSwing": 0.44,
+    "ballTravel": 0.48,
+    "ballSize": 0.68,
+    "heroBayerMix": 0.92,
+    "refinement": 0.82,
+    "soften": 0.12,
+    "inkColor": "#0d0d0d",
+    "paperColor": "#f7f5ef"
+  }
+}

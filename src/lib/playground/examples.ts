@@ -3,6 +3,7 @@ import causticPoolNode from "../../../examples/shader-node/caustic-pool.default.
 import voronoiCausticsNode from "../../../examples/shader-node/voronoi-caustics.default.json";
 import buttonEmitterAuraNode from "../../../examples/shader-node/button-emitter-aura.default.json";
 import buttonGhostWhooshNode from "../../../examples/shader-node/button-ghost-whoosh.default.json";
+import ditheringNode from "../../../examples/shader-node/dithering.default.json";
 import ghostFrameNode from "../../../examples/shader-node/ghost-frame.default.json";
 import ghostWhooshButtonNode from "../../../examples/shader-node/ghost-whoosh-button.default.json";
 import liquidNode from "../../../examples/shader-node/liquid-distortion.default.json";
@@ -12,6 +13,9 @@ import causticPoolSunShelfPreset from "../../../examples/presets/caustic-pool.su
 import buttonEmitterAuraFirePreset from "../../../examples/presets/button-emitter-aura.fire-button.json";
 import buttonEmitterAuraGhostPreset from "../../../examples/presets/button-emitter-aura.ghost-button.json";
 import buttonGhostWhooshPreset from "../../../examples/presets/button-ghost-whoosh.pressure-sweep.json";
+import ditheringAnalogPreset from "../../../examples/presets/dithering.analog-sphere.json";
+import ditheringDigitalPreset from "../../../examples/presets/dithering.digital-plate.json";
+import ditheringHeroPreset from "../../../examples/presets/dithering.hero-inspection.json";
 import ghostFramePreset from "../../../examples/presets/ghost-frame.seance-card.json";
 import ghostWhooshButtonPreset from "../../../examples/presets/ghost-whoosh-button.spectral-cta.json";
 import liquidPreset from "../../../examples/presets/liquid-distortion.gentle-distortion.json";
@@ -68,8 +72,27 @@ function defaultPreset(effectId: EffectId): EffectPreset {
 
 export const defaultNodes: Record<EffectId, ShaderNodePayload> = {
   "aurora-field": auroraNode as ShaderNodePayload,
+  "flowing-gradient": createNode("flowing-gradient", 1440, 900, { seed: "flow-default" }),
+  "cinematic-bokeh": createNode("cinematic-bokeh", 1200, 800, {
+    seed: "bokeh-default",
+    assets: SAMPLE_IMAGE_ASSETS
+  }),
+  "soap-film-interference": createNode("soap-film-interference", 1200, 800, {
+    seed: "soap-default",
+    assets: SAMPLE_IMAGE_ASSETS
+  }),
+  "frosted-acrylic": createNode("frosted-acrylic", 1200, 800, {
+    seed: "acrylic-default",
+    assets: SAMPLE_IMAGE_ASSETS
+  }),
+  "moire-silk": createNode("moire-silk", 1440, 900, { seed: "moire-default" }),
+  "studio-dither-fade": createNode("studio-dither-fade", 1200, 800, {
+    seed: "studio-dither-default",
+    assets: SAMPLE_IMAGE_ASSETS
+  }),
   "caustic-pool": causticPoolNode as ShaderNodePayload,
   contours: createNode("contours", 1440, 900, { seed: "contours-default", rotation: 0 }),
+  dithering: ditheringNode as ShaderNodePayload,
   "voronoi-caustics": voronoiCausticsNode as ShaderNodePayload,
   "holographic-foil": createNode("holographic-foil", 1200, 800, {
     seed: "foil-default",
@@ -120,6 +143,99 @@ export const presetsByEffect: Record<EffectId, EffectPreset[]> = {
     defaultPreset("aurora-field"),
     auroraPreset as EffectPreset
   ],
+  "flowing-gradient": [
+    defaultPreset("flowing-gradient"),
+    {
+      name: "Saffron Tide",
+      effectId: "flowing-gradient",
+      description: "Warmer, broader wave layers with a slower drift.",
+      params: {
+        ...effectRegistry["flowing-gradient"].defaults,
+        flow: 0.28,
+        waveHeight: 0.62,
+        softness: 0.72,
+        contrast: 0.36
+      }
+    }
+  ],
+  "cinematic-bokeh": [
+    defaultPreset("cinematic-bokeh"),
+    {
+      name: "Night Portrait",
+      effectId: "cinematic-bokeh",
+      description: "Shallower focus, stronger highlight bloom, and a more anamorphic blur shape.",
+      params: {
+        ...effectRegistry["cinematic-bokeh"].defaults,
+        focus: 0.42,
+        focusSpread: 0.15,
+        aperture: 0.58,
+        highlightBoost: 0.76,
+        anamorphic: 0.34,
+        bloom: 0.42
+      }
+    }
+  ],
+  "soap-film-interference": [
+    defaultPreset("soap-film-interference"),
+    {
+      name: "Bubble Sheet",
+      effectId: "soap-film-interference",
+      description: "Heavier iridescence and thickness variation over the sample image.",
+      params: {
+        ...effectRegistry["soap-film-interference"].defaults,
+        thickness: 0.7,
+        iridescence: 0.88,
+        distortion: 0.46,
+        drift: 0.38,
+        opacity: 0.9
+      }
+    }
+  ],
+  "frosted-acrylic": [
+    defaultPreset("frosted-acrylic"),
+    {
+      name: "Display Plaque",
+      effectId: "frosted-acrylic",
+      description: "Softer transmission and thicker edges for a product-surface read.",
+      params: {
+        ...effectRegistry["frosted-acrylic"].defaults,
+        blur: 0.58,
+        refraction: 0.18,
+        thickness: 0.62,
+        edgeGlow: 0.58
+      }
+    }
+  ],
+  "moire-silk": [
+    defaultPreset("moire-silk"),
+    {
+      name: "Editorial Satin",
+      effectId: "moire-silk",
+      description: "Tighter line work with more sheen and a stronger field offset.",
+      params: {
+        ...effectRegistry["moire-silk"].defaults,
+        lineDensity: 0.62,
+        interference: 0.8,
+        sheen: 0.62,
+        drift: 0.16
+      }
+    }
+  ],
+  "studio-dither-fade": [
+    defaultPreset("studio-dither-fade"),
+    {
+      name: "Proof Sheet",
+      effectId: "studio-dither-fade",
+      description: "Coarser cells, stronger reduction, and a more obvious paper stock.",
+      params: {
+        ...effectRegistry["studio-dither-fade"].defaults,
+        fade: 0.62,
+        pixelSize: 0.52,
+        quantize: 0.66,
+        paperGrain: 0.42
+      }
+    }
+  ],
   "caustic-pool": [
     defaultPreset("caustic-pool"),
     causticPoolSunShelfPreset as EffectPreset,
@@ -139,6 +255,12 @@ export const presetsByEffect: Record<EffectId, EffectPreset[]> = {
         drift: 0.04
       }
     }
+  ],
+  dithering: [
+    defaultPreset("dithering"),
+    ditheringDigitalPreset as EffectPreset,
+    ditheringAnalogPreset as EffectPreset,
+    ditheringHeroPreset as EffectPreset
   ],
   "voronoi-caustics": [
     defaultPreset("voronoi-caustics"),

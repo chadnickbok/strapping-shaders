@@ -70,8 +70,15 @@ const BUTTON_GEOMETRY_KEYS = [
 
 const DOC_BASENAME_BY_EFFECT: Record<EffectId, string> = {
   "aurora-field": "aurora",
+  "flowing-gradient": "flowing-gradient",
+  "cinematic-bokeh": "cinematic-bokeh",
+  "soap-film-interference": "soap-film-interference",
+  "frosted-acrylic": "frosted-acrylic",
+  "moire-silk": "moire-silk",
+  "studio-dither-fade": "studio-dither-fade",
   "caustic-pool": "caustic-pool",
   contours: "contours",
+  dithering: "dithering",
   "voronoi-caustics": "voronoi-caustics",
   "holographic-foil": "holographic-foil",
   "ink-bleed": "ink-bleed",

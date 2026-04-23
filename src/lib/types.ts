@@ -2,8 +2,15 @@ import type { CSSProperties } from "react";
 
 export type EffectId =
   | "aurora-field"
+  | "flowing-gradient"
+  | "cinematic-bokeh"
+  | "soap-film-interference"
+  | "frosted-acrylic"
+  | "moire-silk"
+  | "studio-dither-fade"
   | "caustic-pool"
   | "contours"
+  | "dithering"
   | "voronoi-caustics"
   | "holographic-foil"
   | "ink-bleed"

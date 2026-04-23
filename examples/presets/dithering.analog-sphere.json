@@ -1,0 +1,22 @@
+{
+  "name": "Analog Sphere",
+  "effectId": "dithering",
+  "description": "Sphere-mapped threshold coordinates with softer 2x-style coverage for a calmer fullscreen read.",
+  "tags": [
+    "1-bit",
+    "analog",
+    "stable"
+  ],
+  "params": {
+    "mode": "analog",
+    "pixelScale": 0.46,
+    "cameraSwing": 0.62,
+    "ballTravel": 0.54,
+    "ballSize": 0.64,
+    "heroBayerMix": 0.48,
+    "refinement": 0.18,
+    "soften": 0.42,
+    "inkColor": "#111111",
+    "paperColor": "#f6f4ee"
+  }
+}

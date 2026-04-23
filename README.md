@@ -13,7 +13,7 @@ Most of the catalog is built from combinations of six high-level components:
 - `image sampling`: refraction, chromatic splitting, halftoning, channel separation, blur
 - `surface and post treatments`: bloom, grain, vignette, emboss, edge bleed, glow
 
-Those parts recombine into the 24 shader families in [`docs/`](docs/): atmospheric backgrounds, image distortions, overlays, print treatments, and material simulations.
+Those parts recombine into the shader families in [`docs/`](docs/): atmospheric backgrounds, image distortions, overlays, print treatments, and material simulations.
 
 ## Shared Contract
 
@@ -75,9 +75,16 @@ Not acceptable:
 | Shader | Primary Components | Input Type | Spec |
 | --- | --- | --- | --- |
 | Aurora | color field, noise warp, highlight shaping | procedural | [docs/aurora.md](docs/aurora.md) |
+| Flowing Gradient | stacked wave masks, drifting noise, palette mapping | procedural | [docs/flowing-gradient.md](docs/flowing-gradient.md) |
+| Cinematic Bokeh | focus band, highlight-weighted blur, bloom | required image | [docs/cinematic-bokeh.md](docs/cinematic-bokeh.md) |
+| Soap Film Interference | thin-film hue shift, Fresnel, thickness noise | optional image | [docs/soap-film-interference.md](docs/soap-film-interference.md) |
+| Frosted Acrylic | transmission blur, refraction, edge highlights | required image | [docs/frosted-acrylic.md](docs/frosted-acrylic.md) |
+| Moire Silk | layered line fields, interference bands, sheen | procedural | [docs/moire-silk.md](docs/moire-silk.md) |
+| Studio Dither Fade | ordered thresholds, quantization, paper texture | required image | [docs/studio-dither-fade.md](docs/studio-dither-fade.md) |
 | Velvet Mesh | color field, grain, vignette | procedural | [docs/velvet-mesh.md](docs/velvet-mesh.md) |
 | Jelly Spiral | SDF, polar transform, soft glow | procedural | [docs/jelly-spiral.md](docs/jelly-spiral.md) |
 | Contours | terrain field, isolines, antialiasing | procedural | [docs/contours.md](docs/contours.md) |
+| Dithering | low-res source shading, ordered thresholds, stable coordinate mapping | procedural | [docs/dithering.md](docs/dithering.md) |
 | Orbit Confetti | tiling, per-cell motion, palette indexing | procedural | [docs/orbit-confetti.md](docs/orbit-confetti.md) |
 | Truchet Neon | tiling, arc SDF, glow | procedural | [docs/truchet-neon.md](docs/truchet-neon.md) |
 | Ghost Frame | rounded-rect SDF, center vapor, edge catch | procedural | [docs/ghost-frame.md](docs/ghost-frame.md) |
@@ -125,13 +132,13 @@ Useful papers and specialist references already used throughout the catalog:
 
 ## Repository Layout
 
-- `docs/`: 24 individual shader specs
+- `docs/`: individual shader specs for the catalog
 - `schemas/`: JSON schemas for shader nodes and presets
 - `examples/`: example nodes and presets
 - `fixtures/`: local assets and placeholders used by the playground; document provenance before shipping
 - `src/`: reference React and WebGL runtime plus playground
 
-The current playground surfaces `aurora-field`, `caustic-pool`, `voronoi-caustics`, `ghost-frame`, `button-emitter-aura`, and `liquid-distortion`. Additional effect implementations, presets, and specs remain in `src/lib/`, `examples/`, and `docs/`.
+The playground reads from the shared effect registry, so newly registered effects appear automatically once their implementation, examples, and docs are wired in.
 
 ## Local Development
 
